@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -26,7 +25,7 @@ export function MemberDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="text-sm text-muted-foreground uppercase tracking-widest animate-pulse">Initializing growth map...</p>
+        <p className="text-sm text-muted-foreground uppercase tracking-widest animate-pulse">Loading your progress...</p>
       </div>
     );
   }
@@ -43,8 +42,8 @@ export function MemberDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 sm:gap-2">
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Growth Map</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Track your progression and upcoming objectives.</p>
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold">My Progress</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Track your journey and see your current goals.</p>
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
@@ -54,12 +53,12 @@ export function MemberDashboard() {
               <Milestone className="size-5 text-accent" />
               Ladder of Success
             </CardTitle>
-            <CardDescription>Visualizing your journey to leadership.</CardDescription>
+            <CardDescription>A visual look at your path to leadership.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8 px-4 sm:px-6">
             <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border border-border/50">
               <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                <span>Success Trajectory</span>
+                <span>Overall Progress</span>
                 <span className="text-foreground">{Math.round(progressValue)}%</span>
               </div>
               <Progress value={progressValue} className="h-3 rounded-full" />
@@ -74,19 +73,19 @@ export function MemberDashboard() {
                     </div>
                     <div className="transition-all group-hover:translate-x-1">
                       <h4 className="text-sm sm:text-base font-bold leading-none">{achievement}</h4>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-tight">Milestone achieved</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-tight">Milestone reached</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="py-4 italic text-muted-foreground text-sm">No recorded milestones in the system.</div>
+                <div className="py-4 italic text-muted-foreground text-sm">No milestones reached yet. Keep going!</div>
               )}
               
               <div className="relative opacity-50 group">
                 <div className="absolute -left-[35px] sm:-left-[41px] top-0.5 h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-secondary border-4 border-background z-10" />
                 <div className="transition-all group-hover:translate-x-1">
-                  <h4 className="text-sm sm:text-base font-bold leading-none">Next Strategic Milestone</h4>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-tight">Future objective</p>
+                  <h4 className="text-sm sm:text-base font-bold leading-none">Next Step</h4>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 uppercase tracking-tight">Goal for the future</p>
                 </div>
               </div>
             </div>
@@ -98,7 +97,7 @@ export function MemberDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Target className="size-4 text-accent" />
-                Active Targets
+                Active Goals
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -113,7 +112,7 @@ export function MemberDashboard() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-center space-y-2 opacity-60">
                     <Target className="size-8 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground italic">No active targets set.</p>
+                    <p className="text-xs text-muted-foreground italic">No goals set yet.</p>
                   </div>
                 )}
               </ul>
@@ -125,7 +124,7 @@ export function MemberDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Trophy className="size-4 text-accent" />
-                Standing
+                Status
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center py-10">

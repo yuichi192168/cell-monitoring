@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -29,27 +28,27 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 sm:gap-2">
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Command Center</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Global telemetry for CellNexus ecosystem managed by Primary Leaders.</p>
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Overview</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">General information across the CellNexus community.</p>
       </div>
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard 
           title="Total Users" 
           value={loadingAll ? "..." : stats.totalUsers.toString()} 
-          change="Registered in system"
+          change="Registered members"
           icon={Users}
         />
         <StatCard 
           title="Active Members" 
           value={loadingAll ? "..." : stats.activeMembers.toString()} 
-          change="Real-time status"
+          change="Currently active"
           icon={UserCheck}
         />
         <StatCard 
-          title="Cell Leaders" 
+          title="Leaders" 
           value={loadingAll ? "..." : stats.leaders.toString()} 
-          change="Assigned hierarchy"
+          change="Assigned leaders"
           icon={Activity}
         />
       </div>

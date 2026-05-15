@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -84,7 +83,7 @@ export default function AuthPage() {
           </div>
           <div className="space-y-1 sm:space-y-2">
             <h1 className="text-4xl sm:text-5xl font-headline font-black tracking-tighter text-foreground italic">CellNexus</h1>
-            <p className="text-sm sm:text-base text-muted-foreground font-medium uppercase tracking-[0.2em]">Strategic Monitoring</p>
+            <p className="text-sm sm:text-base text-muted-foreground font-medium uppercase tracking-[0.2em]">Member Growth Tracker</p>
           </div>
         </div>
 
@@ -104,8 +103,8 @@ export default function AuthPage() {
             <Card className="glass-card border-white/5 rounded-2xl sm:rounded-3xl overflow-hidden">
               <form onSubmit={handleLogin}>
                 <CardHeader className="space-y-1 p-6 sm:p-8">
-                  <CardTitle className="text-2xl font-bold">Monitor Login</CardTitle>
-                  <CardDescription className="text-sm">Access the tactical monitoring dashboard.</CardDescription>
+                  <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+                  <CardDescription className="text-sm">Sign in to manage your members and track progress.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
                   <div className="space-y-2">
@@ -115,7 +114,7 @@ export default function AuthPage() {
                       <Input 
                         id="login-email"
                         type="email" 
-                        placeholder="name@nexus.com" 
+                        placeholder="name@email.com" 
                         className="pl-11 h-12 sm:h-12 bg-secondary/30 rounded-xl"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -141,11 +140,8 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col gap-6 p-6 sm:p-8">
                   <Button type="submit" className="w-full h-14 text-base font-black rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting}>
-                    {isSubmitting ? "Authenticating..." : "SIGN IN"}
+                    {isSubmitting ? "Signing in..." : "SIGN IN"}
                   </Button>
-                  <p className="text-[10px] text-muted-foreground text-center uppercase tracking-[0.3em] font-bold">
-                    Encrypted Protocol Active
-                  </p>
                 </CardFooter>
               </form>
             </Card>
@@ -155,8 +151,8 @@ export default function AuthPage() {
             <Card className="glass-card border-white/5 rounded-2xl sm:rounded-3xl overflow-hidden">
               <form onSubmit={handleRegister}>
                 <CardHeader className="space-y-1 p-6 sm:p-8">
-                  <CardTitle className="text-2xl font-bold">Monitor Enrollment</CardTitle>
-                  <CardDescription className="text-sm">Initialize new monitor identity.</CardDescription>
+                  <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+                  <CardDescription className="text-sm">Join as a leader to start tracking member growth.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
                   <div className="space-y-2">
@@ -180,7 +176,7 @@ export default function AuthPage() {
                       <Input 
                         id="reg-email"
                         type="email" 
-                        placeholder="name@nexus.com" 
+                        placeholder="name@email.com" 
                         className="pl-11 h-12 sm:h-12 bg-secondary/30 rounded-xl"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -205,7 +201,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-3 pt-2">
-                    <Label className="text-xs uppercase tracking-widest font-black">Strategic Clearance Level</Label>
+                    <Label className="text-xs uppercase tracking-widest font-black">Choose your Role</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <Button 
                         type="button"
@@ -228,11 +224,8 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col gap-6 p-6 sm:p-8">
                   <Button type="submit" className="w-full h-14 text-base font-black rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting}>
-                    {isSubmitting ? "Enrolling..." : "INITIATE SESSION"}
+                    {isSubmitting ? "Creating account..." : "GET STARTED"}
                   </Button>
-                  <p className="text-[10px] text-muted-foreground text-center italic">
-                    Access is restricted to authorized tactical monitors.
-                  </p>
                 </CardFooter>
               </form>
             </Card>

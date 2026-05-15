@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'CellNexus | Strategic Monitoring',
-  description: 'Precision member growth and pod monitoring system.',
+  title: 'CellNexus | Member Growth',
+  description: 'A simple system to track member growth and progress.',
 };
 
 export default function RootLayout({

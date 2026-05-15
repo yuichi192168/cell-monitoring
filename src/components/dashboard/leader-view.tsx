@@ -29,7 +29,7 @@ export function LeaderDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="text-sm text-muted-foreground animate-pulse uppercase tracking-widest">Monitoring pod frequency...</p>
+        <p className="text-sm text-muted-foreground animate-pulse uppercase tracking-widest">Loading team members...</p>
       </div>
     );
   }
@@ -37,8 +37,8 @@ export function LeaderDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 sm:gap-2">
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Pod Monitor</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Strategic oversight of your assigned tactical cell.</p>
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold">Team Overview</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Keep track of your team's growth and progress.</p>
       </div>
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -91,17 +91,17 @@ export function LeaderDashboard() {
                         </div>
                       ))}
                       {(!member.targetToDo || member.targetToDo.length === 0) && (
-                        <span className="text-[11px] text-muted-foreground italic">No current objectives</span>
+                        <span className="text-[11px] text-muted-foreground italic">No current goals</span>
                       )}
                       {(member.targetToDo?.length > 2) && (
-                        <span className="text-[9px] text-muted-foreground font-medium pl-1">+{member.targetToDo.length - 2} more targets</span>
+                        <span className="text-[9px] text-muted-foreground font-medium pl-1">+{member.targetToDo.length - 2} more goals</span>
                       )}
                     </div>
                   </div>
 
                   <div className="pt-2">
                     <Button variant="ghost" size="sm" className="w-full justify-between text-[11px] group/btn" onClick={() => router.push('/members')}>
-                      View Tactical Record
+                      View Member Profile
                       <ChevronRight className="size-3 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>
                   </div>
@@ -114,9 +114,9 @@ export function LeaderDashboard() {
             <div className="h-16 w-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
                <User className="size-8 text-muted-foreground/50" />
             </div>
-            <h3 className="text-lg font-bold">Frequency Quiet</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">No cell members currently reporting to your pod.</p>
-            <Button className="mt-6 h-10" onClick={() => router.push('/members')}>Enroll First Member</Button>
+            <h3 className="text-lg font-bold">No members yet</h3>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">You haven't added any members to your team yet.</p>
+            <Button className="mt-6 h-10" onClick={() => router.push('/members')}>Add Your First Member</Button>
           </div>
         )}
       </div>
