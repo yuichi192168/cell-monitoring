@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -42,11 +43,9 @@ export default function MemberRegistry() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Modals state
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -68,7 +67,7 @@ export default function MemberRegistry() {
 
   const { data: members, loading } = useCollection(membersQuery);
 
-  const filteredMembers = members.filter((m: any) => 
+  const filteredMembers = (members || []).filter((m: any) => 
     m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -141,7 +140,7 @@ export default function MemberRegistry() {
   };
 
   const handleDeleteMember = (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this member? This action cannot be undone.")) return;
+    if (!confirm("Are you sure you want to remove this person? This action cannot be undone.")) return;
     
     const userRef = doc(db, 'users', memberId);
     deleteDoc(userRef)
@@ -198,7 +197,7 @@ export default function MemberRegistry() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-headline font-bold">Access Restricted</h2>
-            <p className="text-muted-foreground max-w-sm mx-auto">You do not have the required access level to view the member list.</p>
+            <p className="text-muted-foreground max-w-sm mx-auto">You do not have the required permissions to view the member list.</p>
           </div>
           <Button onClick={() => router.push('/dashboard')} size="lg">Return to Dashboard</Button>
         </div>
@@ -212,7 +211,7 @@ export default function MemberRegistry() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold">Members</h1>
-            <p className="text-sm text-muted-foreground">Manage your members and track their growth progress.</p>
+            <p className="text-sm text-muted-foreground">Manage your community and track their growth journey.</p>
           </div>
           <Button className="gap-2 h-11" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
             <Plus className="size-4" />
@@ -292,7 +291,7 @@ export default function MemberRegistry() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No members found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No one found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -340,7 +339,7 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add New Member</DialogTitle>
-            <DialogDescription>Create a new profile to start tracking their growth.</DialogDescription>
+            <DialogDescription>Enter details to start tracking their progress.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -353,8 +352,8 @@ export default function MemberRegistry() {
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Edit Member</DialogTitle>
-            <DialogDescription>Update the progress and details for {editingMember?.name}.</DialogDescription>
+            <DialogTitle>Edit Details</DialogTitle>
+            <DialogDescription>Update the progress information for {editingMember?.name}.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -408,7 +407,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
       </div>
 
       <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">
-        <Label className="flex items-center gap-2"><CheckCircle2 className="size-4 text-accent" /> Ladder of Success progress</Label>
+        <Label className="flex items-center gap-2"><CheckCircle2 className="size-4 text-accent" /> Growth Progress (SOL)</Label>
         <div className="flex gap-4">
           {SOL_STAGES.map(stage => (
             <div key={stage} className="flex items-center space-x-2">
@@ -429,7 +428,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2"><StickyNote className="size-4 text-accent" /> Notes / Remarks</Label>
+        <Label className="flex items-center gap-2"><StickyNote className="size-4 text-accent" /> Personal Notes</Label>
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
@@ -461,7 +460,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
               <ShieldCheck className="size-4" /> Cell Leader
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-2 text-destructive"><Trash2 className="size-4" /> Delete Member</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-2 text-destructive"><Trash2 className="size-4" /> Delete Person</DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>

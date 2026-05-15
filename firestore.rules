@@ -2,7 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: check if the user has a specific role
+    // Helper: check if the user has a specific role by fetching their document
     function hasRole(role) {
       return request.auth != null && 
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
@@ -17,15 +17,14 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Reading:
-      // 1. Users can always get their own record (critical for session initialization).
+      // 1. Users can always get their own record.
       allow get: if request.auth != null && request.auth.uid == userId;
       
-      // 2. Admins can read any record.
-      // 3. Leaders can read records where they are the assigned leader.
-      allow read: if request.auth != null && (
+      // 2. Admins (Primary Leaders) can read and list all users.
+      // 3. Leaders (Cell Leaders) can read and list users where they are the assigned leader.
+      allow read, list: if request.auth != null && (
         isAdmin() || 
-        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+        (isLeader() && (resource == null || resource.data.assignedLeaderId == request.auth.uid))
       );
 
       // Creating: 
@@ -47,11 +46,11 @@ service cloud.firestore {
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       ) && (
-        // CRITICAL: Only Admins can change the 'role' field.
+        // Only Primary Leaders can change the 'role' field.
         request.resource.data.role == resource.data.role || isAdmin()
       );
 
-      // Deleting: Only Admins can remove user records.
+      // Deleting: Only Primary Leaders can remove user records.
       allow delete: if isAdmin();
     }
   }
