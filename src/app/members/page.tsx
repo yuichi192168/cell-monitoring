@@ -51,7 +51,7 @@ export default function MemberRegistry() {
     status: 'Active' as MemberStatus,
     role: 'Member' as UserRole,
     ladderOfSuccess: [] as string[],
-    targetToDo: [] as string[],
+    targetToDo: '', // Using string for better UX during typing
     remarks: ''
   });
 
@@ -74,10 +74,10 @@ export default function MemberRegistry() {
     setEditingMember(member);
     setFormData({
       name: member.name || '',
-      status: member.status || 'Active',
+      status: (member.status === 'On Leave' || member.status === 'Trial') ? 'Active' : (member.status || 'Active'),
       role: member.role || 'Member',
       ladderOfSuccess: member.ladderOfSuccess || [],
-      targetToDo: member.targetToDo || [],
+      targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || ''
     });
   };
@@ -85,13 +85,19 @@ export default function MemberRegistry() {
   const handleUpdateMember = () => {
     if (!editingMember) return;
     
+    const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
+    const updatePayload = {
+      ...formData,
+      targetToDo: targets
+    };
+
     const userRef = doc(db, 'users', editingMember.id);
-    updateDoc(userRef, { ...formData })
+    updateDoc(userRef, updatePayload)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
           operation: 'update',
-          requestResourceData: formData
+          requestResourceData: updatePayload
         });
         errorEmitter.emit('permission-error', permissionError);
       });
@@ -103,8 +109,10 @@ export default function MemberRegistry() {
     e.preventDefault();
     if (!currentUser) return;
 
+    const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
     const newUser = {
       ...formData,
+      targetToDo: targets,
       assignedLeaderId: currentUser.id,
       createdAt: new Date().toISOString(),
     };
@@ -130,7 +138,7 @@ export default function MemberRegistry() {
       status: 'Active',
       role: 'Member',
       ladderOfSuccess: [],
-      targetToDo: [],
+      targetToDo: '',
       remarks: ''
     });
   };
@@ -171,13 +179,6 @@ export default function MemberRegistry() {
     }));
   };
 
-  const handleTargetChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      targetToDo: value.split(',').map(t => t.trim()).filter(t => t !== '')
-    }));
-  };
-
   const getRoleDisplay = (role: string) => {
     if (role === 'Admin') return 'Primary Leader';
     if (role === 'Leader') return 'Cell Leader';
@@ -206,7 +207,7 @@ export default function MemberRegistry() {
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-headline font-bold">Members</h1>
+            <h1 className="text-2xl sm:text-3xl font-headline font-bold">Member</h1>
             <p className="text-sm text-muted-foreground">Manage your group and track their progress.</p>
           </div>
           <Button className="gap-2 h-11" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
@@ -262,7 +263,7 @@ export default function MemberRegistry() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px]">{member.status}</Badge></TableCell>
+                        <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px]">{member.status || 'Active'}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             {SOL_STAGES.map(stage => (
@@ -321,7 +322,7 @@ export default function MemberRegistry() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-[9px] text-muted-foreground uppercase font-bold">Status</p>
-                      <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] h-4">{member.status}</Badge>
+                      <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] h-4">{member.status || 'Active'}</Badge>
                     </div>
                   </div>
                 </div>
@@ -337,7 +338,7 @@ export default function MemberRegistry() {
             <DialogTitle>Add Member</DialogTitle>
             <DialogDescription>Add a new person to your group and track their SOL journey.</DialogDescription>
           </DialogHeader>
-          <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
+          <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddMember}>Add Member</Button>
@@ -351,7 +352,7 @@ export default function MemberRegistry() {
             <DialogTitle>Edit Member</DialogTitle>
             <DialogDescription>Update progress information for {editingMember?.name}.</DialogDescription>
           </DialogHeader>
-          <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
+          <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditingMember(null)}>Cancel</Button>
             <Button onClick={handleUpdateMember}>Save Changes</Button>
@@ -362,7 +363,7 @@ export default function MemberRegistry() {
   );
 }
 
-function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAdmin }: any) {
+function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
   return (
     <div className="space-y-5 py-4">
       <div className="space-y-2">
@@ -378,8 +379,6 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
             <SelectContent>
               <SelectItem value="Active">Active</SelectItem>
               <SelectItem value="Inactive">Inactive</SelectItem>
-              <SelectItem value="On Leave">On Leave</SelectItem>
-              <SelectItem value="Trial">Trial</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -411,8 +410,8 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
       <div className="space-y-2">
         <Label className="flex items-center gap-2"><ClipboardList className="size-4 text-accent" /> Active Goals (separate with commas)</Label>
         <Input 
-          value={formData.targetToDo.join(', ')} 
-          onChange={e => handleTargetChange(e.target.value)}
+          value={formData.targetToDo} 
+          onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
           placeholder="e.g. Complete First Step, Invite someone" 
         />
       </div>

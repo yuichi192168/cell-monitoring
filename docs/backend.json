@@ -30,7 +30,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Active", "Inactive", "On Leave", "Trial"],
+          "enum": ["Active", "Inactive"],
           "description": "Current status of the member"
         },
         "ladderOfSuccess": {

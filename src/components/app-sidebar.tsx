@@ -26,7 +26,7 @@ const navigation = [
     roles: ["Admin", "Leader"],
   },
   {
-    title: "Members",
+    title: "Member",
     icon: Users,
     url: "/members",
     roles: ["Admin", "Leader"],
