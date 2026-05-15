@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,13 +46,37 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased selection:bg-accent selection:text-accent-foreground;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
+    @apply font-headline tracking-tight;
   }
 }
 
 .glass-card {
-  @apply bg-card/50 backdrop-blur-md border border-border/50;
+  @apply bg-card/40 backdrop-blur-xl border border-white/5 shadow-2xl;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted/50 rounded-full hover:bg-muted transition-colors;
+}
+
+/* Mobile Touch Optimizations */
+@media (max-width: 640px) {
+  .btn, button {
+    @apply min-h-[44px];
+  }
+  input, select, textarea {
+    @apply text-base; /* Prevent auto-zoom on iOS */
+  }
 }
