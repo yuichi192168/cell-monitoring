@@ -1,3 +1,4 @@
+
 export type UserRole = 'Admin' | 'Leader' | 'Member';
 
 export type MemberStatus = 'Active' | 'Inactive' | 'On Leave' | 'Trial';
@@ -9,10 +10,12 @@ export interface Member {
   id: string;
   name: string;
   email: string;
+  phoneNumber?: string;
+  profileImageUrl?: string;
   role: UserRole;
   status: MemberStatus;
-  ladderOfSuccess: string[]; // SOL Stages achieved
-  targetToDo: string[]; // Goals/Tasks
+  ladderOfSuccess: string[];
+  targetToDo: string[];
   remarks?: string;
   assignedLeaderId?: string;
   createdAt: string;
@@ -22,7 +25,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phoneNumber?: string;
+  profileImageUrl?: string;
   role: UserRole;
+  status?: MemberStatus;
+  createdAt?: string;
 }
 
 export interface AppStats {

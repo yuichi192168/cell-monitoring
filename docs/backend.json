@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -14,6 +15,14 @@
           "format": "email",
           "description": "Email address of the user"
         },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number of the user"
+        },
+        "profileImageUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture"
+        },
         "role": {
           "type": "string",
           "enum": ["Admin", "Leader", "Member"],
@@ -27,7 +36,7 @@
         "ladderOfSuccess": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "List of achieved SOL milestones (e.g., Win, Consolidate, Discipleship)"
+          "description": "List of achieved SOL milestones"
         },
         "targetToDo": {
           "type": "array",
@@ -36,7 +45,7 @@
         },
         "remarks": {
           "type": "string",
-          "description": "Additional notes or follow-up actions for the member"
+          "description": "Additional notes or follow-up actions"
         },
         "assignedLeaderId": {
           "type": "string",
