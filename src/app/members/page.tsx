@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert, Lock, User, Mail, Calendar, CheckCircle2, ClipboardList, StickyNote } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, Mail, CheckCircle2, ClipboardList, StickyNote, ShieldCheck } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -154,6 +155,19 @@ export default function MemberRegistry() {
       });
   };
 
+  const handleChangeRole = (memberId: string, newRole: UserRole) => {
+    const userRef = doc(db, 'users', memberId);
+    updateDoc(userRef, { role: newRole })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { role: newRole }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
   const toggleSOL = (stage: string) => {
     setFormData(prev => ({
       ...prev,
@@ -268,7 +282,13 @@ export default function MemberRegistry() {
                           {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <MemberActions member={member} currentUser={currentUser} onEdit={() => openEditModal(member)} onDelete={handleDeleteMember} />
+                          <MemberActions 
+                            member={member} 
+                            currentUser={currentUser} 
+                            onEdit={() => openEditModal(member)} 
+                            onDelete={handleDeleteMember}
+                            onChangeRole={handleChangeRole}
+                          />
                         </TableCell>
                       </TableRow>
                     ))
@@ -290,7 +310,13 @@ export default function MemberRegistry() {
                         <div className="text-[10px] text-muted-foreground">{member.email}</div>
                       </div>
                     </div>
-                    <MemberActions member={member} currentUser={currentUser} onEdit={() => openEditModal(member)} onDelete={handleDeleteMember} />
+                    <MemberActions 
+                      member={member} 
+                      currentUser={currentUser} 
+                      onEdit={() => openEditModal(member)} 
+                      onDelete={handleDeleteMember}
+                      onChangeRole={handleChangeRole}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                     <div className="space-y-1">
@@ -416,7 +442,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
   );
 }
 
-function MemberActions({ member, currentUser, onEdit, onDelete }: any) {
+function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: any) {
   const isAdmin = currentUser?.role === 'Admin';
   return (
     <DropdownMenu>
@@ -424,8 +450,17 @@ function MemberActions({ member, currentUser, onEdit, onDelete }: any) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Tactical Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={onEdit} className="gap-2"><Edit className="size-4" /> Manage Profile</DropdownMenuItem>
+        
         {isAdmin && (
           <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Modify Clearance</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-2">
+              <User className="size-4" /> Promote to Cell Member
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Leader')} className="gap-2 text-accent">
+              <ShieldCheck className="size-4" /> Promote to Cell Leader
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-2 text-destructive"><Trash2 className="size-4" /> Delete Record</DropdownMenuItem>
           </>

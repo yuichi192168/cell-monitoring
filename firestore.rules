@@ -2,16 +2,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: get the current user's document
-    function getCurrentUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
     // Helper: check if the user has a specific role
-    // Using a safer check that handles potential missing data
     function hasRole(role) {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return request.auth != null && userDoc != null && userDoc.data.role == role;
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
 
     function isAdmin() {
@@ -24,11 +18,12 @@ service cloud.firestore {
 
     match /users/{userId} {
       // Reading:
-      // 1. Users can always read their own record (critical for session initialization).
+      // 1. Users can always get their own record (critical for session initialization).
+      allow get: if request.auth != null && request.auth.uid == userId;
+      
       // 2. Admins can read any record.
       // 3. Leaders can read records where they are the assigned leader.
       allow read: if request.auth != null && (
-        request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
