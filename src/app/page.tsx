@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -221,7 +222,7 @@ export default function AuthPage() {
                         className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
                         onClick={() => setSelectedRole('Admin')}
                       >
-                        Global Admin
+                        Primary Leader
                       </Button>
                     </div>
                   </div>

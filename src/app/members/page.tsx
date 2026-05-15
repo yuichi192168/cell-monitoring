@@ -48,9 +48,10 @@ export default function MemberManagement() {
   const db = useFirestore();
 
   const membersQuery = useMemoFirebase(() => {
-    if (!currentUser) return null;
+    // Crucial: Only initiate query if we have a valid role session to prevent permission errors
+    if (!currentUser || !currentUser.role) return null;
     
-    // Admins see everything
+    // Admins (Primary Leaders) see everything
     if (currentUser.role === 'Admin') {
       return query(collection(db, 'users'), orderBy('name', 'asc'));
     }
@@ -135,7 +136,11 @@ export default function MemberManagement() {
       });
   };
 
-  if (currentUser?.role === 'Member') {
+  const getRoleDisplay = (role: string) => {
+    return role === 'Admin' ? 'Primary Leader' : role;
+  };
+
+  if (currentUser && currentUser.role === 'Member') {
     return (
       <LayoutShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center space-y-6 animate-in fade-in duration-500">
@@ -197,7 +202,7 @@ export default function MemberManagement() {
                 <TableHeader className="bg-secondary/30">
                   <TableRow>
                     <TableHead className="w-[250px]">Member</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Clearance</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Registered</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -225,7 +230,7 @@ export default function MemberManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-normal text-[10px]">{member.role}</Badge>
+                          <Badge variant="outline" className="font-normal text-[10px]">{getRoleDisplay(member.role)}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge 
@@ -242,11 +247,11 @@ export default function MemberManagement() {
                           <MemberActions 
                             member={member} 
                             currentUser={currentUser} 
-                            onEditRole={(m) => {
+                            onEditRole={(m: any) => {
                               setEditingMember(m);
                               setNewRole(m.role);
                             }}
-                            onDelete={(id) => handleDeleteMember(id)}
+                            onDelete={(id: string) => handleDeleteMember(id)}
                           />
                         </TableCell>
                       </TableRow>
@@ -285,18 +290,18 @@ export default function MemberManagement() {
                       <MemberActions 
                         member={member} 
                         currentUser={currentUser} 
-                        onEditRole={(m) => {
+                        onEditRole={(m: any) => {
                           setEditingMember(m);
                           setNewRole(m.role);
                         }}
-                        onDelete={(id) => handleDeleteMember(id)}
+                        onDelete={(id: string) => handleDeleteMember(id)}
                       />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
                       <div className="space-y-1">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Clearance</p>
-                        <Badge variant="outline" className="text-[10px] py-0 px-2">{member.role}</Badge>
+                        <Badge variant="outline" className="text-[10px] py-0 px-2">{getRoleDisplay(member.role)}</Badge>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Status</p>
@@ -379,8 +384,8 @@ export default function MemberManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Member">Member</SelectItem>
-                <SelectItem value="Leader">Leader</SelectItem>
-                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Leader">Cell Leader</SelectItem>
+                <SelectItem value="Admin">Primary Leader</SelectItem>
               </SelectContent>
             </Select>
           </div>

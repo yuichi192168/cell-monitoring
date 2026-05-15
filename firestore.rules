@@ -8,9 +8,10 @@ service cloud.firestore {
     }
 
     // Helper: check if the user has a specific role
+    // Using a safer check that handles potential missing data
     function hasRole(role) {
-      let user = getCurrentUser();
-      return request.auth != null && user != null && user.role == role;
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return request.auth != null && userDoc != null && userDoc.data.role == role;
     }
 
     function isAdmin() {
@@ -23,7 +24,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       // Reading:
-      // 1. Users can read their own record.
+      // 1. Users can always read their own record (critical for session initialization).
       // 2. Admins can read any record.
       // 3. Leaders can read records where they are the assigned leader.
       allow read: if request.auth != null && (

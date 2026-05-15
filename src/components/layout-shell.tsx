@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -32,6 +33,10 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
+  const getRoleDisplay = (role: string) => {
+    return role === 'Admin' ? 'Primary Leader' : role;
+  };
+
   if (isLoading || !user) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
@@ -52,7 +57,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-secondary/50 h-auto sm:gap-3">
                   <div className="text-sm text-right hidden sm:block">
                     <p className="font-medium">{user.name}</p>
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">{user.role}</p>
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">{getRoleDisplay(user.role)}</p>
                   </div>
                   <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-secondary border border-border flex items-center justify-center relative">
                     <User className="size-4 sm:size-5 text-muted-foreground" />
@@ -64,7 +69,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuLabel className="sm:hidden">
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground uppercase">{user.role}</p>
+                    <p className="text-xs leading-none text-muted-foreground uppercase">{getRoleDisplay(user.role)}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="sm:hidden" />
