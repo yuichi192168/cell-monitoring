@@ -1,0 +1,48 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper: get the current user's document
+    function getCurrentUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Helper: check if the user has a specific role
+    function hasRole(role) {
+      return request.auth != null && getCurrentUser().role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('Admin');
+    }
+
+    function isLeader() {
+      return hasRole('Leader');
+    }
+
+    match /users/{userId} {
+      // Reading:
+      // 1. Users can read their own record.
+      // 2. Admins can read any record.
+      // 3. Leaders can read any record (to access the Registry).
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin() || isLeader());
+
+      // Creating: 
+      // Users can create their own record during initialization.
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Updating:
+      // 1. Users can update their own record.
+      // 2. Admins can update any record.
+      // 3. Leaders can update records of members assigned to them.
+      allow update: if request.auth != null && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+      );
+
+      // Deleting: Only Admins can remove user records.
+      allow delete: if isAdmin();
+    }
+  }
+}

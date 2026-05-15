@@ -1,0 +1,64 @@
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing role, growth milestones, and assigned leadership details.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the user"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["Admin", "Leader", "Member"],
+          "description": "The system role which dictates permissions"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "Inactive", "On Leave", "Trial"],
+          "description": "Current status of the member"
+        },
+        "ladderOfSuccess": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of achieved milestones"
+        },
+        "targetToDo": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of active goals or tasks"
+        },
+        "assignedLeaderId": {
+          "type": "string",
+          "description": "The UID of the leader managing this member"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the user's avatar image"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the record was created"
+        }
+      },
+      "required": ["name", "email", "role"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/User" },
+      "description": "Main collection for user profiles and member records."
+    }
+  }
+}
