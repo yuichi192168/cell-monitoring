@@ -5,14 +5,11 @@ import * as React from "react"
 import {
   LayoutDashboard,
   Users,
-  Settings,
-  LogOut,
 } from "lucide-react"
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -20,7 +17,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/navigation"
 
 const navigation = [
   {
@@ -38,18 +34,12 @@ const navigation = [
 ]
 
 export function AppSidebar() {
-  const { user, logout } = useAuth()
-  const router = useRouter()
+  const { user } = useAuth()
   const { state } = useSidebar()
 
   const filteredNav = navigation.filter(item => 
     item.roles.includes(user?.role || "")
   )
-
-  const handleLogout = () => {
-    logout()
-    router.push("/")
-  }
 
   return (
     <Sidebar collapsible="icon">
@@ -77,24 +67,6 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-border">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings">
-              <a href="/settings">
-                <Settings className="size-4" />
-                <span>Settings</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive">
-              <LogOut className="size-4" />
-              <span>Sign Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   )
 }

@@ -6,10 +6,19 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/app-sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { User } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -17,6 +26,11 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       router.push('/');
     }
   }, [user, isLoading, router]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
 
   if (isLoading || !user) {
     return (
@@ -33,13 +47,33 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <div className="ml-auto flex items-center gap-4">
-            <div className="text-sm text-right hidden sm:block">
-              <p className="font-medium">{user.name}</p>
-              <p className="text-muted-foreground text-xs">{user.role}</p>
-            </div>
-            <div className="h-10 w-10 rounded-full bg-secondary border border-border flex items-center justify-center">
-               <User className="size-5 text-muted-foreground" />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-3 px-2 hover:bg-secondary/50 h-auto">
+                  <div className="text-sm text-right hidden sm:block">
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">{user.role}</p>
+                  </div>
+                  <div className="h-9 w-9 rounded-full bg-secondary border border-border flex items-center justify-center relative">
+                    <User className="size-5 text-muted-foreground" />
+                  </div>
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="gap-2 cursor-pointer">
+                  <Settings className="size-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="size-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-y-auto">
