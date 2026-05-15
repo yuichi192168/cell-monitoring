@@ -5,7 +5,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Circle, User, Mail, ChevronRight, ClipboardList } from 'lucide-react';
+import { Circle, User, ChevronRight, ClipboardList, StickyNote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
@@ -60,7 +60,7 @@ export function LeaderDashboard() {
                   </div>
                   <CardTitle className="text-lg line-clamp-1">{member.name}</CardTitle>
                   <CardDescription className="flex items-center gap-1.5 text-xs truncate">
-                    {member.phoneNumber || 'No phone recorded'}
+                    {member.phoneNumber}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-6 pt-0">
@@ -93,10 +93,16 @@ export function LeaderDashboard() {
                       {(!member.targetToDo || member.targetToDo.length === 0) && (
                         <span className="text-[11px] text-muted-foreground italic">No goals set</span>
                       )}
-                      {(member.targetToDo?.length > 2) && (
-                        <span className="text-[9px] text-muted-foreground font-medium pl-1">+{member.targetToDo.length - 2} more goals</span>
-                      )}
                     </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-border/40">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                      <StickyNote className="size-3" /> Notes
+                    </p>
+                    <p className="text-[11px] text-muted-foreground line-clamp-3">
+                      {member.remarks || "No notes added yet."}
+                    </p>
                   </div>
 
                   <div className="pt-2">

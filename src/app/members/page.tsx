@@ -253,8 +253,8 @@ export default function MemberRegistry() {
                   <TableRow>
                     <TableHead>Member</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Ladder of Success</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -271,7 +271,7 @@ export default function MemberRegistry() {
                             </div>
                             <div>
                               <div className="font-medium text-sm">{member.name}</div>
-                              <div className="text-[10px] text-muted-foreground">{getRoleDisplay(member.role)}</div>
+                              <div className="text-[10px] text-muted-foreground">{member.phoneNumber}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -285,8 +285,8 @@ export default function MemberRegistry() {
                             ))}
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-[10px]">
-                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Recently'}
+                        <TableCell className="max-w-[200px] truncate text-muted-foreground text-[10px]">
+                          {member.remarks || '-'}
                         </TableCell>
                         <TableCell className="text-right">
                           <MemberActions 
@@ -314,7 +314,7 @@ export default function MemberRegistry() {
                       <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center border"><User className="size-5 text-muted-foreground" /></div>
                       <div>
                         <div className="font-bold text-sm">{member.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{getRoleDisplay(member.role)}</div>
+                        <div className="text-[10px] text-muted-foreground">{member.phoneNumber}</div>
                       </div>
                     </div>
                     <MemberActions 
@@ -325,17 +325,25 @@ export default function MemberRegistry() {
                       onChangeRole={handleChangeRole}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                    <div className="space-y-1">
-                      <p className="text-[9px] text-muted-foreground uppercase font-bold">Progress</p>
-                      <div className="flex gap-1 flex-wrap">
-                        {SOL_STAGES.map(s => <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4">{s}</Badge>)}
+                  <div className="space-y-3 pt-2 border-t">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Progress</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {SOL_STAGES.map(s => <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4">{s}</Badge>)}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Status</p>
+                        <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] h-4">{member.status || 'Active'}</Badge>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] text-muted-foreground uppercase font-bold">Status</p>
-                      <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] h-4">{member.status || 'Active'}</Badge>
-                    </div>
+                    {member.remarks && (
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Notes</p>
+                        <p className="text-[11px] text-muted-foreground line-clamp-2 italic">{member.remarks}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
