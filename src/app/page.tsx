@@ -21,7 +21,6 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('Leader');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
@@ -50,7 +49,8 @@ export default function AuthPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await register(email, password, name, selectedRole);
+      // Defaulting to 'Leader' (Cell Leader) as requested
+      await register(email, password, name, 'Leader');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -115,7 +115,7 @@ export default function AuthPage() {
                       <Input 
                         id="login-email"
                         type="email" 
-                        placeholder="name@email.com" 
+                        placeholder="name@gmail.com" 
                         className="pl-11 h-12 sm:h-12 bg-secondary/30 rounded-xl"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -162,7 +162,7 @@ export default function AuthPage() {
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                       <Input 
                         id="reg-name"
-                        placeholder="John Doe" 
+                        placeholder="John Peter" 
                         className="pl-11 h-12 sm:h-12 bg-secondary/30 rounded-xl"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -177,7 +177,7 @@ export default function AuthPage() {
                       <Input 
                         id="reg-email"
                         type="email" 
-                        placeholder="name@email.com" 
+                        placeholder="name@gmail.com" 
                         className="pl-11 h-12 sm:h-12 bg-secondary/30 rounded-xl"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -199,27 +199,6 @@ export default function AuthPage() {
                         required
                         minLength={6}
                       />
-                    </div>
-                  </div>
-                  <div className="space-y-3 pt-2">
-                    <Label className="text-xs uppercase tracking-widest font-black">Choose your Role</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        type="button"
-                        variant={selectedRole === 'Leader' ? 'default' : 'outline'} 
-                        className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
-                        onClick={() => setSelectedRole('Leader')}
-                      >
-                        Cell Leader
-                      </Button>
-                      <Button 
-                        type="button"
-                        variant={selectedRole === 'Admin' ? 'default' : 'outline'} 
-                        className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
-                        onClick={() => setSelectedRole('Admin')}
-                      >
-                        Primary Leader
-                      </Button>
                     </div>
                   </div>
                 </CardContent>
