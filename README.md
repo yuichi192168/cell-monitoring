@@ -1,6 +1,6 @@
-# CellNexus | Member Monitoring & Growth Tracker
+# Cell Group Tracker | Member Monitoring & Growth Tracker
 
-CellNexus is a specialized management system designed to track spiritual and professional growth within a team-based organization. It focuses on the "Ladder of Success" (SOL) framework, providing leaders with the tools to monitor progress, set goals, and provide personalized coaching.
+Cell Group Tracker is a specialized management system designed to track spiritual and professional growth within a team-based organization. It focuses on the "Ladder of Success" (SOL) framework, providing leaders with the tools to monitor progress, set goals, and provide personalized coaching.
 
 ## 🚀 Key Features
 

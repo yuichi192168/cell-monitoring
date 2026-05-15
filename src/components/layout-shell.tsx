@@ -72,9 +72,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="bg-primary text-primary-foreground h-10 w-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-primary/20 group-active:scale-95 transition-all">
-              CN
+              CGT
             </div>
-            <span className="text-xl font-headline font-black tracking-tighter hidden sm:block italic">CellNexus</span>
+            <span className="text-xl font-headline font-black tracking-tighter hidden sm:block italic">Cell Group Tracker</span>
           </Link>
 
           {/* Desktop Navigation */}

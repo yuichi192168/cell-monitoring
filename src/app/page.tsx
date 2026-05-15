@@ -80,11 +80,11 @@ export default function AuthPage() {
       <div className="max-w-md w-full space-y-6 sm:space-y-8 relative z-10">
         <div className="text-center space-y-3 sm:space-y-4">
           <div className="inline-flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-primary text-primary-foreground font-bold text-2xl sm:text-3xl mb-2 sm:mb-4 shadow-2xl shadow-primary/30">
-            CN
+            CGT
           </div>
           <div className="space-y-1 sm:space-y-2">
-            <h1 className="text-4xl sm:text-5xl font-headline font-black tracking-tighter text-foreground italic">CellNexus</h1>
-            <p className="text-sm sm:text-base text-muted-foreground font-medium uppercase tracking-[0.2em]">Member Growth Tracker</p>
+            <h1 className="text-4xl sm:text-5xl font-headline font-black tracking-tighter text-foreground italic">Cell Group Tracker</h1>
+            <p className="text-sm sm:text-base text-muted-foreground font-medium uppercase tracking-[0.2em]">Member Growth Monitoring</p>
           </div>
         </div>
 

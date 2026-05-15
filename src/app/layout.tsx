@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'CellNexus | Member Growth',
+  title: 'Cell Group Tracker | Member Growth',
   description: 'A simple system to track member growth and progress.',
 };
 
