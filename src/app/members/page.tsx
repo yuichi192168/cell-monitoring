@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, Mail, CheckCircle2, ClipboardList, StickyNote, ShieldCheck } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +48,6 @@ export default function MemberRegistry() {
   
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     status: 'Active' as MemberStatus,
     role: 'Member' as UserRole,
     ladderOfSuccess: [] as string[],
@@ -68,15 +67,13 @@ export default function MemberRegistry() {
   const { data: members, loading } = useCollection(membersQuery);
 
   const filteredMembers = (members || []).filter((m: any) => 
-    m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const openEditModal = (member: any) => {
     setEditingMember(member);
     setFormData({
       name: member.name || '',
-      email: member.email || '',
       status: member.status || 'Active',
       role: member.role || 'Member',
       ladderOfSuccess: member.ladderOfSuccess || [],
@@ -130,7 +127,6 @@ export default function MemberRegistry() {
   const resetForm = () => {
     setFormData({
       name: '',
-      email: '',
       status: 'Active',
       role: 'Member',
       ladderOfSuccess: [],
@@ -211,11 +207,11 @@ export default function MemberRegistry() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold">Members</h1>
-            <p className="text-sm text-muted-foreground">Manage your community and track their growth journey.</p>
+            <p className="text-sm text-muted-foreground">Manage your group and track their progress.</p>
           </div>
           <Button className="gap-2 h-11" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
             <Plus className="size-4" />
-            Add New Member
+            Add Member
           </Button>
         </div>
 
@@ -225,7 +221,7 @@ export default function MemberRegistry() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search by name or email..." 
+                  placeholder="Search members by name..." 
                   className="pl-9 h-11"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -277,7 +273,7 @@ export default function MemberRegistry() {
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-[10px]">
-                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A'}
+                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Recently'}
                         </TableCell>
                         <TableCell className="text-right">
                           <MemberActions 
@@ -291,7 +287,7 @@ export default function MemberRegistry() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No one found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No members found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -305,7 +301,7 @@ export default function MemberRegistry() {
                       <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center border"><User className="size-5 text-muted-foreground" /></div>
                       <div>
                         <div className="font-bold text-sm">{member.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{member.email}</div>
+                        <div className="text-[10px] text-muted-foreground">{getRoleDisplay(member.role)}</div>
                       </div>
                     </div>
                     <MemberActions 
@@ -319,7 +315,7 @@ export default function MemberRegistry() {
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                     <div className="space-y-1">
                       <p className="text-[9px] text-muted-foreground uppercase font-bold">Progress</p>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap">
                         {SOL_STAGES.map(s => <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4">{s}</Badge>)}
                       </div>
                     </div>
@@ -338,8 +334,8 @@ export default function MemberRegistry() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Add New Member</DialogTitle>
-            <DialogDescription>Enter details to start tracking their progress.</DialogDescription>
+            <DialogTitle>Add Member</DialogTitle>
+            <DialogDescription>Add a new person to your group and track their SOL journey.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -352,8 +348,8 @@ export default function MemberRegistry() {
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Edit Details</DialogTitle>
-            <DialogDescription>Update the progress information for {editingMember?.name}.</DialogDescription>
+            <DialogTitle>Edit Member</DialogTitle>
+            <DialogDescription>Update progress information for {editingMember?.name}.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleTargetChange={handleTargetChange} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -369,15 +365,9 @@ export default function MemberRegistry() {
 function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAdmin }: any) {
   return (
     <div className="space-y-5 py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Full Name</Label>
-          <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter name" />
-        </div>
-        <div className="space-y-2">
-          <Label>Email</Label>
-          <Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Enter email" />
-        </div>
+      <div className="space-y-2">
+        <Label>Full Name</Label>
+        <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter member's name" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -407,8 +397,8 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
       </div>
 
       <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">
-        <Label className="flex items-center gap-2"><CheckCircle2 className="size-4 text-accent" /> Growth Progress (SOL)</Label>
-        <div className="flex gap-4">
+        <Label className="flex items-center gap-2"><CheckCircle2 className="size-4 text-accent" /> Ladder of Success (SOL)</Label>
+        <div className="grid grid-cols-2 gap-4">
           {SOL_STAGES.map(stage => (
             <div key={stage} className="flex items-center space-x-2">
               <Checkbox id={stage} checked={formData.ladderOfSuccess.includes(stage)} onCheckedChange={() => toggleSOL(stage)} />
@@ -423,16 +413,16 @@ function MemberForm({ formData, setFormData, toggleSOL, handleTargetChange, isAd
         <Input 
           value={formData.targetToDo.join(', ')} 
           onChange={e => handleTargetChange(e.target.value)}
-          placeholder="e.g. Finish Module 1, Attend Bible Study" 
+          placeholder="e.g. Complete First Step, Invite someone" 
         />
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2"><StickyNote className="size-4 text-accent" /> Personal Notes</Label>
+        <Label className="flex items-center gap-2"><StickyNote className="size-4 text-accent" /> Notes</Label>
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          placeholder="Add any helpful notes or follow-up tasks..." 
+          placeholder="Add any additional details or follow-up notes..." 
           className="min-h-[100px]"
         />
       </div>
@@ -460,7 +450,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
               <ShieldCheck className="size-4" /> Cell Leader
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-2 text-destructive"><Trash2 className="size-4" /> Delete Person</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-2 text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>

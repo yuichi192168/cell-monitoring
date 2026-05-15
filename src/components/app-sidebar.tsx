@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,7 +26,7 @@ const navigation = [
     roles: ["Admin", "Leader"],
   },
   {
-    title: "Member Registry",
+    title: "Members",
     icon: Users,
     url: "/members",
     roles: ["Admin", "Leader"],

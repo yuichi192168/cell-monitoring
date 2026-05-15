@@ -2,7 +2,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: check if the user has a specific role by fetching their document
     function hasRole(role) {
       return request.auth != null && 
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
@@ -17,40 +16,27 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // 1. Users can always get their own record.
-      allow get: if request.auth != null && request.auth.uid == userId;
+      allow get: if request.auth != null && (request.auth.uid == userId || isAdmin() || (isLeader() && get(/databases/$(database)/documents/users/$(userId)).data.assignedLeaderId == request.auth.uid));
       
-      // 2. Admins (Primary Leaders) can read and list all users.
-      // 3. Leaders (Cell Leaders) can read and list users where they are the assigned leader.
-      allow read, list: if request.auth != null && (
+      allow list: if request.auth != null && (
         isAdmin() || 
-        (isLeader() && (resource == null || resource.data.assignedLeaderId == request.auth.uid))
+        (isLeader() && request.query.filters.assignedLeaderId == request.auth.uid)
       );
 
-      // Creating: 
-      // 1. Users can create their own record during initialization.
-      // 2. Admins can create any record.
-      // 3. Leaders can create records for members assigned to them.
       allow create: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // Updating:
-      // 1. Users can update their own record (except role).
-      // 2. Admins can update any record (including role).
-      // 3. Leaders can update records of members assigned to them (except role).
       allow update: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       ) && (
-        // Only Primary Leaders can change the 'role' field.
         request.resource.data.role == resource.data.role || isAdmin()
       );
 
-      // Deleting: Only Primary Leaders can remove user records.
       allow delete: if isAdmin();
     }
   }

@@ -12,7 +12,7 @@ import { useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { User as UserIcon, Mail, Phone, Shield, Calendar, Activity, Lock, Save, Camera, CheckCircle2 } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Shield, Calendar, Activity, Lock, Save, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 
 export default function SettingsPage() {
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser } = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
   
@@ -147,7 +147,6 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Profile Sidebar */}
           <div className="space-y-6">
             <Card className="glass-card">
               <CardContent className="pt-6 text-center space-y-4">
@@ -200,7 +199,6 @@ export default function SettingsPage() {
             </Card>
           </div>
 
-          {/* Main Form */}
           <div className="md:col-span-2">
             <Card className="glass-card">
               <form onSubmit={handleUpdateProfile}>
@@ -245,7 +243,7 @@ export default function SettingsPage() {
                         id="phone" 
                         type="tel"
                         className="pl-9"
-                        placeholder="+1 234 567 890"
+                        placeholder="+63 928 2346 158"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                       />
@@ -253,7 +251,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="space-y-2 pt-2">
-                    <Label>Assigned Role</Label>
+                    <Label>Role</Label>
                     <div className="flex items-center gap-2 p-3 rounded-xl bg-secondary/20 border text-sm font-medium">
                       <Shield className="size-4 text-accent" />
                       {getRoleDisplay(userData.role)}
@@ -270,14 +268,13 @@ export default function SettingsPage() {
             </Card>
 
             <div className="mt-8 p-6 rounded-2xl border border-dashed text-center space-y-3">
-              <h4 className="text-sm font-bold">Need assistance?</h4>
-              <p className="text-xs text-muted-foreground">If you encounter issues with your account, please contact the Primary Leader for support.</p>
+              <h4 className="text-sm font-bold">Need help?</h4>
+              <p className="text-xs text-muted-foreground">If you have any issues with your account, please contact the Primary Leader for support.</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Change Password Dialog */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

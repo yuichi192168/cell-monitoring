@@ -13,7 +13,7 @@
         "email": {
           "type": "string",
           "format": "email",
-          "description": "Email address of the user"
+          "description": "Email address of the user (optional for cell members)"
         },
         "phoneNumber": {
           "type": "string",
@@ -36,7 +36,7 @@
         "ladderOfSuccess": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "List of achieved SOL milestones"
+          "description": "List of achieved milestones: Win, Consolidate, Discipleship, SOL"
         },
         "targetToDo": {
           "type": "array",
@@ -57,7 +57,7 @@
           "description": "Timestamp when the record was created"
         }
       },
-      "required": ["name", "email", "role"]
+      "required": ["name", "role"]
     }
   },
   "auth": {

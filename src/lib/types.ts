@@ -3,13 +3,13 @@ export type UserRole = 'Admin' | 'Leader' | 'Member';
 
 export type MemberStatus = 'Active' | 'Inactive' | 'On Leave' | 'Trial';
 
-export const SOL_STAGES = ['Win', 'Consolidate', 'Discipleship'] as const;
+export const SOL_STAGES = ['Win', 'Consolidate', 'Discipleship', 'SOL'] as const;
 export type SOLStage = (typeof SOL_STAGES)[number];
 
 export interface Member {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   phoneNumber?: string;
   profileImageUrl?: string;
   role: UserRole;
