@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,19 +22,26 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       return;
     }
 
+    setError(null);
+
     const unsubscribe = onSnapshot(
       ref,
       (snapshot: DocumentSnapshot<T>) => {
         setData(snapshot.exists() ? ({ ...snapshot.data(), id: snapshot.id } as any) : null);
         setLoading(false);
       },
-      async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: ref.path,
-          operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+      (err) => {
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: ref.path,
+            operation: 'get',
+          });
+          setError(permissionError);
+          console.warn("Firestore Permission Denied (Get):", err.message);
+        } else {
+          console.error("Firestore useDoc error:", err);
+          setError(err);
+        }
         setLoading(false);
       }
     );

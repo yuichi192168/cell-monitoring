@@ -49,7 +49,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 export function AdminDashboard() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: authLoading } = useAuth();
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -66,11 +66,14 @@ export function AdminDashboard() {
   });
 
   const allUsersQuery = useMemoFirebase(() => {
+    // GUARD: Only issue query if user is fully loaded and has correct role
     if (!currentUser || currentUser.role !== 'Admin') return null;
     return query(collection(db, 'users'), orderBy('name', 'asc'));
-  }, [db, currentUser]);
+  }, [db, currentUser?.id, currentUser?.role]);
 
-  const { data: allUsers, loading } = useCollection(allUsersQuery);
+  const { data: allUsers, loading: dataLoading } = useCollection(allUsersQuery);
+
+  const loading = authLoading || dataLoading;
 
   const leaders = (allUsers || []).filter(u => u.role === 'Leader');
   const members = (allUsers || []).filter(u => u.role === 'Member');

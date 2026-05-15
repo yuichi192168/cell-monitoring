@@ -15,20 +15,24 @@ import { useRouter } from 'next/navigation';
 import { SOL_STAGES } from '@/lib/types';
 
 export function LeaderDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const db = useFirestore();
   const router = useRouter();
 
   const teamQuery = useMemoFirebase(() => {
-    if (!user || !user.id) return null;
+    // GUARD: Only issue query if user is fully loaded and has correct role
+    if (!user || !user.id || user.role !== 'Leader') return null;
+    
     return query(
       collection(db, 'users'), 
       where('assignedLeaderId', '==', user.id),
       orderBy('name', 'asc')
     );
-  }, [db, user?.id]);
+  }, [db, user?.id, user?.role]);
 
-  const { data: members, loading } = useCollection(teamQuery);
+  const { data: members, loading: dataLoading } = useCollection(teamQuery);
+
+  const loading = authLoading || dataLoading;
 
   if (loading) {
     return (
@@ -47,8 +51,8 @@ export function LeaderDashboard() {
       </div>
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {members.length > 0 ? (
-          members.map((member) => {
+        {members && members.length > 0 ? (
+          members.map((member: any) => {
             const solProgress = Math.round(((member.ladderOfSuccess?.length || 0) / SOL_STAGES.length) * 100);
             
             return (

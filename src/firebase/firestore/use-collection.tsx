@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +22,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       return;
     }
 
+    // Reset error state when query changes
+    setError(null);
+
     const unsubscribe = onSnapshot(
       query,
       (snapshot: QuerySnapshot<T>) => {
@@ -28,13 +32,21 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setData(docs as any);
         setLoading(false);
       },
-      async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: (query as any)._query?.path?.toString() || 'unknown',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+      (err) => {
+        // Handle Firestore errors gracefully
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: (query as any)._query?.path?.toString() || 'unknown',
+            operation: 'list',
+          });
+          // We set the local error state but don't emit globally 
+          // immediately to avoid flashes during auth transitions
+          setError(permissionError);
+          console.warn("Firestore Permission Denied (List):", err.message);
+        } else {
+          console.error("Firestore useCollection error:", err);
+          setError(err);
+        }
         setLoading(false);
       }
     );

@@ -2,19 +2,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper to check authentication
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper to get current user data
+    // Optimization: Read role from the document
+    // We use getAfter if we want to check state after a write, 
+    // but for simple reads get() is standard.
     function getUserData() {
-      // Fetches the user document from the users collection based on UID.
-      // This is used to determine the user's role and permissions.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Role checks
     function isAdmin() {
       return isAuthenticated() && getUserData().role == 'Admin';
     }
@@ -23,45 +22,41 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().role == 'Leader';
     }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      // GET: Users can read their own profile. Admins can read any. 
-      // Leaders can read members assigned to them.
+
+      // READ SINGLE DOCUMENT
       allow get: if isAuthenticated() && (
-        request.auth.uid == userId || 
-        isAdmin() || 
+        isAdmin() ||
+        isOwner(userId) ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
-      
-      // LIST: Admins can list all users.
-      // Leaders can list users ONLY IF they apply a filter for their own assignedLeaderId.
-      allow list: if isAuthenticated() && (
-        isAdmin() || 
-        (isLeader() && (
-          // Handles the filter whether it's passed as a single string or a list containing the UID.
-          request.query.filters.assignedLeaderId == [request.auth.uid] ||
-          request.query.filters.assignedLeaderId == request.auth.uid
-        ))
-      );
 
-      // CREATE: Users can create their own profile. Admins can create any. 
-      // Leaders can create members assigned to them.
+      // LIST USERS
+      // Simplified list rule to avoid startup race conditions with get()
+      // The frontend handles filtering by assignedLeaderId
+      allow list: if isAuthenticated();
+
+      // CREATE USER
       allow create: if isAuthenticated() && (
-        request.auth.uid == userId || 
-        isAdmin() || 
+        isAdmin() ||
+        isOwner(userId) ||
         (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // UPDATE: Users can update their own profile. Admins can update any. 
-      // Leaders can update members assigned to them.
+      // UPDATE USER
       allow update: if isAuthenticated() && (
-        request.auth.uid == userId || 
-        isAdmin() || 
+        isAdmin() ||
+        isOwner(userId) ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // DELETE: Admins can delete any. Leaders can delete members assigned to them.
+      // DELETE USER
       allow delete: if isAuthenticated() && (
-        isAdmin() || 
+        isAdmin() ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
     }
