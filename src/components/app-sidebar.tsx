@@ -5,13 +5,8 @@ import * as React from "react"
 import {
   LayoutDashboard,
   Users,
-  BarChart3,
   Settings,
   LogOut,
-  ChevronRight,
-  ShieldCheck,
-  UserCircle,
-  Trophy
 } from "lucide-react"
 
 import {
@@ -22,9 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
@@ -42,18 +34,6 @@ const navigation = [
     icon: Users,
     url: "/members",
     roles: ["Admin", "Leader"],
-  },
-  {
-    title: "Growth Insights",
-    icon: Trophy,
-    url: "/insights",
-    roles: ["Admin", "Leader"],
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    url: "/analytics",
-    roles: ["Admin"],
   },
 ]
 

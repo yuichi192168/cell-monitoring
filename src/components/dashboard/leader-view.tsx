@@ -1,31 +1,18 @@
 
 "use client"
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Sparkles, ArrowRight, CheckCircle2, Circle, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Circle, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { leaderMemberGrowthInsights, LeaderMemberGrowthInsightsOutput } from '@/ai/flows/leader-member-growth-insights';
 import { useAuth } from '@/hooks/use-auth';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 export function LeaderDashboard() {
   const { user } = useAuth();
   const db = useFirestore();
-  const [selectedMember, setSelectedMember] = useState<any | null>(null);
-  const [aiInsight, setAiInsight] = useState<LeaderMemberGrowthInsightsOutput | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const podQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -33,25 +20,6 @@ export function LeaderDashboard() {
   }, [db, user]);
 
   const { data: members, loading } = useCollection(podQuery);
-
-  const generateInsight = async (member: any) => {
-    setSelectedMember(member);
-    setIsGenerating(true);
-    setAiInsight(null);
-    try {
-      const result = await leaderMemberGrowthInsights({
-        memberId: member.id,
-        memberName: member.name,
-        ladderOfSuccessHistory: member.ladderOfSuccess || [],
-        targetToDoHistory: member.targetToDo || []
-      });
-      setAiInsight(result);
-    } catch (error) {
-      console.error("AI Insight failed", error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Monitoring telemetry...</div>;
@@ -109,16 +77,6 @@ export function LeaderDashboard() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="pt-0">
-                <Button 
-                  variant="outline" 
-                  className="w-full gap-2 border-primary/20 hover:border-primary/50 group"
-                  onClick={() => generateInsight(member)}
-                >
-                  <Sparkles className="size-4 text-accent transition-transform group-hover:scale-110" />
-                  Get AI Growth Insights
-                </Button>
-              </CardFooter>
             </Card>
           ))
         ) : (
@@ -127,60 +85,6 @@ export function LeaderDashboard() {
           </div>
         )}
       </div>
-
-      <Dialog open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
-        <DialogContent className="max-w-2xl bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="size-5 text-accent" />
-              Growth Insights: {selectedMember?.name}
-            </DialogTitle>
-            <DialogDescription>
-              AI-generated strategy based on current progress and targets.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 min-h-[300px] flex flex-col">
-            {isGenerating ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-                <p className="text-sm text-muted-foreground">Analyzing growth patterns and milestones...</p>
-              </div>
-            ) : aiInsight ? (
-              <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-                <section>
-                  <h4 className="text-sm font-bold uppercase tracking-widest text-accent mb-3">Recommended Next Steps</h4>
-                  <ul className="space-y-3">
-                    {aiInsight.nextSteps.map((step, idx) => (
-                      <li key={idx} className="flex items-start gap-3 bg-secondary/30 p-3 rounded-lg border border-border/30">
-                        <CheckCircle2 className="size-5 text-accent shrink-0 mt-0.5" />
-                        <span className="text-sm">{step}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-                <section>
-                  <h4 className="text-sm font-bold uppercase tracking-widest text-accent mb-3">Coaching Focus Points</h4>
-                  <ul className="space-y-3">
-                    {aiInsight.coachingFocusPoints.map((point, idx) => (
-                      <li key={idx} className="flex items-start gap-3 bg-secondary/30 p-3 rounded-lg border border-border/30">
-                        <ArrowRight className="size-5 text-muted-foreground shrink-0 mt-0.5" />
-                        <span className="text-sm">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground italic">Failed to load insights. Please try again.</p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedMember(null)}>Close Insight</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
