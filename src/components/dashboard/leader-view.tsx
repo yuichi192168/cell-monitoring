@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -59,9 +58,6 @@ export function LeaderDashboard() {
                     </Badge>
                   </div>
                   <CardTitle className="text-lg line-clamp-1">{member.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-1.5 text-xs truncate">
-                    {member.phoneNumber}
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-6 pt-0">
                   <div className="space-y-3">

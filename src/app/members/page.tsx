@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -50,7 +49,6 @@ export default function MemberRegistry() {
     name: '',
     status: 'Active' as MemberStatus,
     role: 'Member' as UserRole,
-    phoneNumber: '',
     ladderOfSuccess: [] as string[],
     targetToDo: '',
     remarks: ''
@@ -86,7 +84,6 @@ export default function MemberRegistry() {
       name: member.name || '',
       status: member.status || 'Active',
       role: member.role || 'Member',
-      phoneNumber: member.phoneNumber || '',
       ladderOfSuccess: member.ladderOfSuccess || [],
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || ''
@@ -148,7 +145,6 @@ export default function MemberRegistry() {
       name: '',
       status: 'Active',
       role: 'Member',
-      phoneNumber: '',
       ladderOfSuccess: [],
       targetToDo: '',
       remarks: ''
@@ -189,12 +185,6 @@ export default function MemberRegistry() {
         ? prev.ladderOfSuccess.filter(s => s !== stage)
         : [...prev.ladderOfSuccess, stage]
     }));
-  };
-
-  const getRoleDisplay = (role: string) => {
-    if (role === 'Admin') return 'Primary Leader';
-    if (role === 'Leader') return 'Cell Leader';
-    return 'Cell Member';
   };
 
   if (currentUser && currentUser.role === 'Member') {
@@ -271,7 +261,6 @@ export default function MemberRegistry() {
                             </div>
                             <div>
                               <div className="font-medium text-sm">{member.name}</div>
-                              <div className="text-[10px] text-muted-foreground">{member.phoneNumber}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -314,7 +303,6 @@ export default function MemberRegistry() {
                       <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center border"><User className="size-5 text-muted-foreground" /></div>
                       <div>
                         <div className="font-bold text-sm">{member.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{member.phoneNumber}</div>
                       </div>
                     </div>
                     <MemberActions 
@@ -413,15 +401,6 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Phone Number</Label>
-        <Input 
-          value={formData.phoneNumber} 
-          onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })} 
-          placeholder="+63 928 2346 158" 
-        />
       </div>
 
       <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">

@@ -1,4 +1,3 @@
-
 import { Member, AppStats } from './types';
 
 export const MOCK_MEMBERS: Member[] = [
@@ -8,7 +7,7 @@ export const MOCK_MEMBERS: Member[] = [
     email: 'alex@example.com',
     role: 'Member',
     status: 'Active',
-    ladderOfSuccess: ['Completed Onboarding', 'Attended First Cell', 'Lead Prayer'],
+    ladderOfSuccess: ['Win', 'Consolidate'],
     targetToDo: ['Finish Bible Study Module 1', 'Invite 1 Friend'],
     assignedLeaderId: 'leader-1',
     createdAt: '2024-01-10',
@@ -18,8 +17,8 @@ export const MOCK_MEMBERS: Member[] = [
     name: 'Sarah Chen',
     email: 'sarah@example.com',
     role: 'Member',
-    status: 'Trial',
-    ladderOfSuccess: ['Attended First Cell'],
+    status: 'Active',
+    ladderOfSuccess: ['Win'],
     targetToDo: ['Register for Foundation Class'],
     assignedLeaderId: 'leader-1',
     createdAt: '2024-03-05',
@@ -30,20 +29,9 @@ export const MOCK_MEMBERS: Member[] = [
     email: 'marcus@example.com',
     role: 'Leader',
     status: 'Active',
-    ladderOfSuccess: ['Leader Training Certified', 'Cell Planted'],
-    targetToDo: ['Weekly report submission', 'Mentorship session with Alex'],
+    ladderOfSuccess: ['Win', 'Consolidate', 'Discipleship', 'SOL'],
+    targetToDo: ['Weekly report submission'],
     createdAt: '2023-11-20',
-  },
-  {
-    id: '4',
-    name: 'Elena Vance',
-    email: 'elena@example.com',
-    role: 'Member',
-    status: 'Active',
-    ladderOfSuccess: ['Completed Onboarding', 'Volunteered for Event'],
-    targetToDo: ['Sign up for leadership path'],
-    assignedLeaderId: 'leader-1',
-    createdAt: '2024-02-15',
   }
 ];
 

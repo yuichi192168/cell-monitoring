@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -14,10 +13,6 @@
           "type": "string",
           "format": "email",
           "description": "Email address of the user (optional for cell members)"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "Phone number of the user"
         },
         "profileImageUrl": {
           "type": "string",

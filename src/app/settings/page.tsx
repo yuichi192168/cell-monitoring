@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { User as UserIcon, Mail, Phone, Shield, Calendar, Activity, Lock, Save, Camera } from 'lucide-react';
+import { User as UserIcon, Mail, Shield, Calendar, Activity, Lock, Save, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -33,7 +32,6 @@ export default function SettingsPage() {
   const { data: userData, loading } = useDoc(userRef);
 
   const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Password change state
@@ -46,7 +44,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (userData) {
       setName(userData.name || '');
-      setPhoneNumber(userData.phoneNumber || '');
     }
   }, [userData]);
 
@@ -58,7 +55,6 @@ export default function SettingsPage() {
     try {
       await updateDoc(userRef, {
         name,
-        phoneNumber,
       });
       toast({
         title: "Profile Updated",
@@ -233,21 +229,6 @@ export default function SettingsPage() {
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground">Contact your administrator to change your email.</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                      <Input 
-                        id="phone" 
-                        type="tel"
-                        className="pl-9"
-                        placeholder="+63 928 2346 158"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                      />
-                    </div>
                   </div>
 
                   <div className="space-y-2 pt-2">

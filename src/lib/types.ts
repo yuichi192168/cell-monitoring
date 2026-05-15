@@ -1,4 +1,3 @@
-
 export type UserRole = 'Admin' | 'Leader' | 'Member';
 
 export type MemberStatus = 'Active' | 'Inactive';
@@ -10,7 +9,6 @@ export interface Member {
   id: string;
   name: string;
   email?: string;
-  phoneNumber?: string;
   profileImageUrl?: string;
   role: UserRole;
   status: MemberStatus;
@@ -25,7 +23,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phoneNumber?: string;
   profileImageUrl?: string;
   role: UserRole;
   status?: MemberStatus;
