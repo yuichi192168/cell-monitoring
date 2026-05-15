@@ -51,24 +51,34 @@ export default function MemberRegistry() {
     status: 'Active' as MemberStatus,
     role: 'Member' as UserRole,
     ladderOfSuccess: [] as string[],
-    targetToDo: '', // Using string for better UX during typing
+    targetToDo: '',
     remarks: ''
   });
 
   const db = useFirestore();
 
   const membersQuery = useMemoFirebase(() => {
-    if (!currentUser || !currentUser.role) return null;
-    if (currentUser.role === 'Admin') return query(collection(db, 'users'), orderBy('name', 'asc'));
-    if (currentUser.role === 'Leader') return query(collection(db, 'users'), where('assignedLeaderId', '==', currentUser.id), orderBy('name', 'asc'));
+    if (!currentUser || !currentUser.id || !currentUser.role) return null;
+    
+    const usersRef = collection(db, 'users');
+    
+    if (currentUser.role === 'Admin') {
+      return query(usersRef, orderBy('name', 'asc'));
+    }
+    
+    if (currentUser.role === 'Leader') {
+      // Removed orderBy to ensure it works without composite index requirements
+      return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
+    }
+    
     return null;
-  }, [db, currentUser]);
+  }, [db, currentUser?.id, currentUser?.role]);
 
   const { data: members, loading } = useCollection(membersQuery);
 
-  const filteredMembers = (members || []).filter((m: any) => 
-    m.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMembers = (members || [])
+    .filter((m: any) => m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
   const openEditModal = (member: any) => {
     setEditingMember(member);
@@ -207,8 +217,8 @@ export default function MemberRegistry() {
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-headline font-bold">Member</h1>
-            <p className="text-sm text-muted-foreground">Manage your group and track their progress.</p>
+            <h1 className="text-2xl sm:text-3xl font-headline font-bold">Members</h1>
+            <p className="text-sm text-muted-foreground">Manage your team and track their growth journey.</p>
           </div>
           <Button className="gap-2 h-11" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
             <Plus className="size-4" />
@@ -248,7 +258,7 @@ export default function MemberRegistry() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">Loading members...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">Loading team records...</TableCell></TableRow>
                   ) : filteredMembers.length > 0 ? (
                     filteredMembers.map((member: any) => (
                       <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors">
@@ -288,13 +298,13 @@ export default function MemberRegistry() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No members found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No team members found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
             </div>
 
-            <div className="sm:hidden px-4 space-y-4">
+            <div className="sm:hidden px-4 space-y-4 pb-4">
               {filteredMembers.map((member: any) => (
                 <div key={member.id} className="p-4 rounded-xl border bg-secondary/10 space-y-4">
                   <div className="flex justify-between">
@@ -336,7 +346,7 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
-            <DialogDescription>Add a new person to your group and track their SOL journey.</DialogDescription>
+            <DialogDescription>Add a new person to your team and track their growth journey.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -368,7 +378,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
     <div className="space-y-5 py-4">
       <div className="space-y-2">
         <Label>Full Name</Label>
-        <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter member's name" />
+        <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Enter name" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -383,7 +393,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Role</Label>
+          <Label>System Role</Label>
           <Select value={formData.role} onValueChange={(v: UserRole) => setFormData({ ...formData, role: v })} disabled={!isAdmin}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -396,7 +406,9 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
       </div>
 
       <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">
-        <Label className="flex items-center gap-2"><CheckCircle2 className="size-4 text-accent" /> Ladder of Success (SOL)</Label>
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
+          <CheckCircle2 className="size-4" /> Ladder of Success (SOL)
+        </Label>
         <div className="grid grid-cols-2 gap-4">
           {SOL_STAGES.map(stage => (
             <div key={stage} className="flex items-center space-x-2">
@@ -408,20 +420,24 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2"><ClipboardList className="size-4 text-accent" /> Active Goals (separate with commas)</Label>
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
+          <ClipboardList className="size-4" /> Active Goals
+        </Label>
         <Input 
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="e.g. Complete First Step, Invite someone" 
+          placeholder="e.g. Finish First Step, Invite someone (comma separated)" 
         />
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2"><StickyNote className="size-4 text-accent" /> Notes</Label>
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
+          <StickyNote className="size-4" /> Notes
+        </Label>
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          placeholder="Add any additional details or follow-up notes..." 
+          placeholder="Add any additional details or progress notes..." 
           className="min-h-[100px]"
         />
       </div>
@@ -441,7 +457,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Change Role</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Change System Role</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-2">
               <User className="size-4" /> Cell Member
             </DropdownMenuItem>

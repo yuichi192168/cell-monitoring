@@ -16,7 +16,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if request.auth != null && (request.auth.uid == userId || isAdmin() || (isLeader() && get(/databases/$(database)/documents/users/$(userId)).data.assignedLeaderId == request.auth.uid));
+      allow get: if request.auth != null && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (isLeader() && get(/databases/$(database)/documents/users/$(userId)).data.assignedLeaderId == request.auth.uid)
+      );
       
       allow list: if request.auth != null && (
         isAdmin() || 
@@ -33,8 +37,6 @@ service cloud.firestore {
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
-      ) && (
-        request.resource.data.role == resource.data.role || isAdmin()
       );
 
       allow delete: if isAdmin();
