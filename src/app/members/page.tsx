@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { MOCK_MEMBERS } from '@/lib/mock-data';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu, 
@@ -18,13 +19,21 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 export default function MemberManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const db = useFirestore();
 
-  const filteredMembers = MOCK_MEMBERS.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const membersQuery = useMemoFirebase(() => {
+    return query(collection(db, 'users'), orderBy('name', 'asc'));
+  }, [db]);
+
+  const { data: members, loading } = useCollection(membersQuery);
+
+  const filteredMembers = members.filter((m: any) => 
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -67,18 +76,28 @@ export default function MemberManagement() {
                     <TableHead className="w-[250px]">Member</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Joined Date</TableHead>
+                    <TableHead>Registered</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMembers.length > 0 ? (
-                    filteredMembers.map((member) => (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                        Syncing registry data...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredMembers.length > 0 ? (
+                    filteredMembers.map((member: any) => (
                       <TableRow key={member.id} className="group transition-colors hover:bg-secondary/20">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs">
-                              {member.name.substring(0, 2)}
+                            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs overflow-hidden">
+                              {member.avatarUrl ? (
+                                <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
+                              ) : (
+                                member.name?.substring(0, 2)
+                              )}
                             </div>
                             <div>
                               <div className="font-medium">{member.name}</div>
@@ -98,7 +117,7 @@ export default function MemberManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {member.createdAt}
+                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

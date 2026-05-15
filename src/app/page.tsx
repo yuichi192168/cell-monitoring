@@ -9,14 +9,22 @@ import { useRouter } from 'next/navigation';
 import { Shield, Users, Target } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, user } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (user) {
+    if (user && !isLoading) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -32,7 +40,7 @@ export default function LoginPage() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
-            <CardDescription>Select a mock role to access the dashboard</CardDescription>
+            <CardDescription>Authorize via Google and select initial role (MVP Demo)</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <Button 
@@ -71,7 +79,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="text-center">
             <p className="text-xs text-muted-foreground w-full">
-              Built for high-performance leadership teams
+              Authentication powered by Firebase Identity
             </p>
           </CardFooter>
         </Card>

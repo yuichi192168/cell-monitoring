@@ -3,8 +3,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MOCK_STATS, MOCK_MEMBERS } from '@/lib/mock-data';
-import { Users, UserCheck, TrendingUp, Activity, MoreHorizontal } from 'lucide-react';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { Users, UserCheck, TrendingUp, Activity } from 'lucide-react';
 import { 
   BarChart, 
   Bar, 
@@ -12,13 +13,11 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line
+  ResponsiveContainer 
 } from 'recharts';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 const chartData = [
   { name: 'Jan', users: 400, cells: 24 },
@@ -29,6 +28,24 @@ const chartData = [
 ];
 
 export function AdminDashboard() {
+  const db = useFirestore();
+  
+  const membersQuery = useMemoFirebase(() => {
+    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(5));
+  }, [db]);
+
+  const allMembersQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
+
+  const { data: recentMembers, loading: loadingRecent } = useCollection(membersQuery);
+  const { data: allMembers, loading: loadingAll } = useCollection(allMembersQuery);
+
+  const stats = {
+    totalUsers: allMembers.length,
+    activeMembers: allMembers.filter(m => m.status === 'Active').length,
+    leaders: allMembers.filter(m => m.role === 'Leader').length,
+    growthRate: 15, // Mocked for UI
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-2">
@@ -39,26 +56,26 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Users" 
-          value={MOCK_STATS.totalUsers.toLocaleString()} 
+          value={loadingAll ? "..." : stats.totalUsers.toString()} 
           change="+12% from last month"
           icon={Users}
         />
         <StatCard 
-          title="Cell Members" 
-          value={MOCK_STATS.totalCellMembers.toString()} 
-          change="+18% growth"
+          title="Active Members" 
+          value={loadingAll ? "..." : stats.activeMembers.toString()} 
+          change="Real-time status"
           icon={UserCheck}
         />
         <StatCard 
           title="Growth Rate" 
-          value={`${MOCK_STATS.growthRate}%`} 
+          value={`${stats.growthRate}%`} 
           change="Positive trajectory"
           icon={TrendingUp}
         />
         <StatCard 
-          title="Active Sessions" 
-          value={MOCK_STATS.activeSessions.toString()} 
-          change="Live status"
+          title="System Leaders" 
+          value={loadingAll ? "..." : stats.leaders.toString()} 
+          change="Assigned hierarchy"
           icon={Activity}
         />
       </div>
@@ -91,18 +108,28 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
              <div className="space-y-6">
-               {MOCK_MEMBERS.slice(0, 4).map((member) => (
-                 <div key={member.id} className="flex items-center gap-4">
-                   <div className="h-9 w-9 rounded-full bg-secondary border border-border flex items-center justify-center font-bold text-xs">
-                     {member.name.substring(0, 2)}
+               {loadingRecent ? (
+                 <p className="text-sm text-muted-foreground">Loading activity...</p>
+               ) : recentMembers.length > 0 ? (
+                 recentMembers.map((member: any) => (
+                   <div key={member.id} className="flex items-center gap-4">
+                     <div className="h-9 w-9 rounded-full bg-secondary border border-border flex items-center justify-center font-bold text-xs overflow-hidden">
+                       {member.avatarUrl ? (
+                         <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
+                       ) : (
+                         member.name?.substring(0, 2)
+                       )}
+                     </div>
+                     <div className="flex-1 space-y-1">
+                       <p className="text-sm font-medium leading-none">{member.name}</p>
+                       <p className="text-xs text-muted-foreground">{member.email}</p>
+                     </div>
+                     <Badge variant="outline" className="text-[10px] h-5">{member.status}</Badge>
                    </div>
-                   <div className="flex-1 space-y-1">
-                     <p className="text-sm font-medium leading-none">{member.name}</p>
-                     <p className="text-xs text-muted-foreground">{member.email}</p>
-                   </div>
-                   <Badge variant="outline" className="text-[10px] h-5">{member.status}</Badge>
-                 </div>
-               ))}
+                 ))
+               ) : (
+                 <p className="text-sm text-muted-foreground">No recent members.</p>
+               )}
              </div>
              <Button variant="link" className="w-full mt-6 text-xs" asChild>
                <a href="/members">View All Records</a>
