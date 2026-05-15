@@ -9,7 +9,6 @@ service cloud.firestore {
 
     // Helper: check if the user has a specific role
     function hasRole(role) {
-      // Added null check for robustness
       let user = getCurrentUser();
       return request.auth != null && user != null && user.role == role;
     }
@@ -26,12 +25,22 @@ service cloud.firestore {
       // Reading:
       // 1. Users can read their own record.
       // 2. Admins can read any record.
-      // 3. Leaders can read any record (to access the Registry).
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin() || isLeader());
+      // 3. Leaders can read records where they are the assigned leader.
+      allow read: if request.auth != null && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+      );
 
       // Creating: 
-      // Users can create their own record during initialization.
-      allow create: if request.auth != null && request.auth.uid == userId;
+      // 1. Users can create their own record during initialization.
+      // 2. Admins can create any record.
+      // 3. Leaders can create records for members assigned to them.
+      allow create: if request.auth != null && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
+      );
 
       // Updating:
       // 1. Users can update their own record (except role).
@@ -43,7 +52,6 @@ service cloud.firestore {
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       ) && (
         // CRITICAL: Only Admins can change the 'role' field.
-        // If the role is being changed, the requester MUST be an Admin.
         request.resource.data.role == resource.data.role || isAdmin()
       );
 

@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert, Lock, User, Mail, Calendar } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu, 
@@ -33,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UserRole } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Label } from '@/components/ui/label';
 
 export default function MemberManagement() {
   const { user: currentUser } = useAuth();
@@ -40,11 +42,29 @@ export default function MemberManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('Member');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newMemberData, setNewMemberData] = useState({ name: '', email: '' });
+  
   const db = useFirestore();
 
   const membersQuery = useMemoFirebase(() => {
-    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Leader')) return null;
-    return query(collection(db, 'users'), orderBy('name', 'asc'));
+    if (!currentUser) return null;
+    
+    // Admins see everything
+    if (currentUser.role === 'Admin') {
+      return query(collection(db, 'users'), orderBy('name', 'asc'));
+    }
+    
+    // Leaders only see their assigned members
+    if (currentUser.role === 'Leader') {
+      return query(
+        collection(db, 'users'), 
+        where('assignedLeaderId', '==', currentUser.id),
+        orderBy('name', 'asc')
+      );
+    }
+    
+    return null;
   }, [db, currentUser]);
 
   const { data: members, loading } = useCollection(membersQuery);
@@ -71,6 +91,36 @@ export default function MemberManagement() {
     setEditingMember(null);
   };
 
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const newUser = {
+      name: newMemberData.name,
+      email: newMemberData.email,
+      role: 'Member',
+      status: 'Active',
+      ladderOfSuccess: [],
+      targetToDo: [],
+      assignedLeaderId: currentUser.id, // Automatically assign to the current leader
+      createdAt: new Date().toISOString(),
+    };
+
+    const usersRef = collection(db, 'users');
+    addDoc(usersRef, newUser)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: usersRef.path,
+          operation: 'create',
+          requestResourceData: newUser
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
+    setIsAddDialogOpen(false);
+    setNewMemberData({ name: '', email: '' });
+  };
+
   const handleDeleteMember = (memberId: string) => {
     if (!confirm("Are you sure you want to remove this member? This action is irreversible.")) return;
     
@@ -95,7 +145,7 @@ export default function MemberManagement() {
           <div className="space-y-2">
             <h2 className="text-2xl font-headline font-bold">Access Restricted</h2>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              You do not have the required security clearance to view the strategic member registry.
+              You do not have the required security clearance to view the tactical member registry.
             </p>
           </div>
           <Button onClick={() => router.push('/dashboard')} size="lg" className="w-full max-w-xs">Return to Dashboard</Button>
@@ -110,10 +160,12 @@ export default function MemberManagement() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight">Member Registry</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Manage tactical member records.</p>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {currentUser?.role === 'Leader' ? 'Your assigned tactical records.' : 'Global tactical member records.'}
+            </p>
           </div>
-          {currentUser?.role === 'Admin' && (
-            <Button className="gap-2 w-full sm:w-auto h-12 sm:h-10">
+          {(currentUser?.role === 'Admin' || currentUser?.role === 'Leader') && (
+            <Button className="gap-2 w-full sm:w-auto h-12 sm:h-10" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="size-4" />
               Add New Member
             </Button>
@@ -272,6 +324,46 @@ export default function MemberManagement() {
         </Card>
       </div>
 
+      {/* Add Member Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-md w-[90vw] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Enroll New Member</DialogTitle>
+            <DialogDescription>
+              Initialize a new tactical member record.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddMember} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Full Name</Label>
+              <Input 
+                id="new-name" 
+                placeholder="Member Name" 
+                value={newMemberData.name}
+                onChange={(e) => setNewMemberData({ ...newMemberData, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email Address</Label>
+              <Input 
+                id="new-email" 
+                type="email" 
+                placeholder="name@example.com" 
+                value={newMemberData.email}
+                onChange={(e) => setNewMemberData({ ...newMemberData, email: e.target.value })}
+                required
+              />
+            </div>
+            <DialogFooter className="pt-4 flex-col sm:flex-row gap-2">
+              <Button type="button" variant="outline" className="h-12 sm:h-10" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" className="h-12 sm:h-10">Initiate Enrollment</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-md w-[90vw] rounded-2xl">
           <DialogHeader>
@@ -303,6 +395,9 @@ export default function MemberManagement() {
 }
 
 function MemberActions({ member, currentUser, onEditRole, onDelete }: any) {
+  const isAdmin = currentUser?.role === 'Admin';
+  const isLeader = currentUser?.role === 'Leader';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -313,19 +408,21 @@ function MemberActions({ member, currentUser, onEditRole, onDelete }: any) {
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Member Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {currentUser?.role === 'Admin' && (
+        {isAdmin && (
+          <DropdownMenuItem 
+            className="gap-2 py-3 sm:py-2"
+            onClick={() => onEditRole(member)}
+          >
+            <ShieldAlert className="size-4" />
+            Change Role
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem className="gap-2 py-3 sm:py-2">
+          <Edit className="size-4" />
+          Edit Record
+        </DropdownMenuItem>
+        {isAdmin && (
           <>
-            <DropdownMenuItem 
-              className="gap-2 py-3 sm:py-2"
-              onClick={() => onEditRole(member)}
-            >
-              <ShieldAlert className="size-4" />
-              Change Role
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 py-3 sm:py-2">
-              <Edit className="size-4" />
-              Edit Record
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="gap-2 text-destructive py-3 sm:py-2"
@@ -336,7 +433,7 @@ function MemberActions({ member, currentUser, onEditRole, onDelete }: any) {
             </DropdownMenuItem>
           </>
         )}
-        {currentUser?.role !== 'Admin' && (
+        {!isAdmin && !isLeader && (
           <DropdownMenuItem disabled className="text-xs italic text-muted-foreground">
             Insufficient Clearance
           </DropdownMenuItem>
