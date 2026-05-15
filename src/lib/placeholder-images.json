@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "avatar-1",
+      "description": "Professional male avatar",
+      "imageUrl": "https://picsum.photos/seed/avatar1/200/200",
+      "imageHint": "man professional"
+    },
+    {
+      "id": "avatar-2",
+      "description": "Professional female avatar",
+      "imageUrl": "https://picsum.photos/seed/avatar2/200/200",
+      "imageHint": "woman professional"
+    },
+    {
+      "id": "hero-dashboard",
+      "description": "Modern abstract data visualization",
+      "imageUrl": "https://picsum.photos/seed/cellnexus/1200/600",
+      "imageHint": "abstract technology"
+    }
+  ]
 }
