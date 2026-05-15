@@ -1,10 +1,9 @@
-
 "use client"
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User, Check } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -40,7 +39,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { SOL_STAGES, UserRole, MemberStatus } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -68,19 +66,26 @@ export function AdminDashboard() {
   const allUsersQuery = useMemoFirebase(() => {
     // GUARD: Only issue query if user is fully loaded and has correct role
     if (!currentUser || currentUser.role !== 'Admin') return null;
-    return query(collection(db, 'users'), orderBy('name', 'asc'));
+    return query(collection(db, 'users'));
   }, [db, currentUser?.id, currentUser?.role]);
 
-  const { data: allUsers, loading: dataLoading } = useCollection(allUsersQuery);
+  const { data: allUsersRaw, loading: dataLoading } = useCollection(allUsersQuery);
 
   const loading = authLoading || dataLoading;
 
-  const leaders = (allUsers || []).filter(u => u.role === 'Leader');
-  const members = (allUsers || []).filter(u => u.role === 'Member');
+  // Client-side sorting and filtering
+  const allUsersSorted = React.useMemo(() => {
+    return (allUsersRaw || []).sort((a: any, b: any) => 
+      (a.name || '').localeCompare(b.name || '')
+    );
+  }, [allUsersRaw]);
+
+  const leaders = allUsersSorted.filter(u => u.role === 'Leader');
+  const members = allUsersSorted.filter(u => u.role === 'Member');
 
   const stats = {
-    totalUsers: allUsers?.length || 0,
-    activeMembers: (allUsers || []).filter(m => m.status === 'Active').length,
+    totalUsers: allUsersSorted.length || 0,
+    activeMembers: allUsersSorted.filter(m => m.status === 'Active').length,
     leadersCount: leaders.length,
   };
 

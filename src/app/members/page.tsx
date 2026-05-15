@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu, 
@@ -75,20 +74,24 @@ export default function MemberRegistry() {
     const usersRef = collection(db, 'users');
     
     if (currentUser.role === 'Admin') {
-      return query(usersRef, orderBy('name', 'asc'));
+      // Remove orderBy from query to avoid index requirements
+      return query(usersRef);
     }
     
     if (currentUser.role === 'Leader') {
-      return query(usersRef, where('assignedLeaderId', '==', currentUser.id), orderBy('name', 'asc'));
+      // Remove orderBy from query to avoid index requirements
+      return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
     }
     
     return null;
   }, [db, currentUser?.id, currentUser?.role]);
 
-  const { data: members, loading } = useCollection(membersQuery);
+  const { data: membersRaw, loading } = useCollection(membersQuery);
 
-  const filteredMembers = (members || [])
-    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Sort and filter members on the client side
+  const filteredMembers = (membersRaw || [])
+    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   const openEditModal = (member: any) => {
     setEditingMember(member);

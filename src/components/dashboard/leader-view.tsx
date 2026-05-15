@@ -1,10 +1,9 @@
-
 "use client"
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Circle, User, ChevronRight, ClipboardList, StickyNote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
@@ -23,16 +22,23 @@ export function LeaderDashboard() {
     // GUARD: Only issue query if user is fully loaded and has correct role
     if (!user || !user.id || user.role !== 'Leader') return null;
     
+    // Remove orderBy from Firestore query to avoid index requirements
     return query(
       collection(db, 'users'), 
-      where('assignedLeaderId', '==', user.id),
-      orderBy('name', 'asc')
+      where('assignedLeaderId', '==', user.id)
     );
   }, [db, user?.id, user?.role]);
 
-  const { data: members, loading: dataLoading } = useCollection(teamQuery);
+  const { data: membersRaw, loading: dataLoading } = useCollection(teamQuery);
 
   const loading = authLoading || dataLoading;
+
+  // Sort results on the client side
+  const members = React.useMemo(() => {
+    return (membersRaw || []).sort((a: any, b: any) => 
+      (a.name || '').localeCompare(b.name || '')
+    );
+  }, [membersRaw]);
 
   if (loading) {
     return (
