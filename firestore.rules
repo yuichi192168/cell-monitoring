@@ -2,42 +2,54 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    // Helper to check if a user has a specific role
+    function hasRole(role) {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
 
     function isAdmin() {
-      return request.auth != null && getRole() == 'Admin';
+      return hasRole('Admin');
     }
 
     function isLeader() {
-      return request.auth != null && getRole() == 'Leader';
+      return hasRole('Leader');
     }
 
     match /users/{userId} {
+      // GET: Users can read their own profile. Admins can read any profile. 
+      // Leaders can read profiles of members assigned to them.
       allow get: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && get(/databases/$(database)/documents/users/$(userId)).data.assignedLeaderId == request.auth.uid)
       );
       
+      // LIST: Admins can list all users. 
+      // Leaders can list users ONLY IF they filter by their own assignedLeaderId.
       allow list: if request.auth != null && (
         isAdmin() || 
         (isLeader() && request.query.filters.assignedLeaderId == request.auth.uid)
       );
 
+      // CREATE: Users can create their own profile. Admins can create any. 
+      // Leaders can create members assigned to them.
       allow create: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
       );
 
+      // UPDATE: Users can update their own profile. Admins can update any. 
+      // Leaders can update members assigned to them.
       allow update: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
 
+      // DELETE: Admins can delete any. Leaders can delete members assigned to them.
       allow delete: if request.auth != null && (
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
