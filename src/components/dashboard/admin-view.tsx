@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -154,19 +153,19 @@ export function AdminDashboard() {
         <StatCard title="Group Leaders" value={stats.leadersCount.toString()} label="Assigned leaders" icon={Activity} />
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <h2 className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Cell Groups</h2>
         
-        <Accordion type="multiple" className="space-y-4">
+        <div className="grid grid-cols-1 gap-6">
           {leaders.map(leader => {
             const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === ''));
             
             return (
-              <AccordionItem key={leader.id} value={leader.id} className="border-none">
-                <Card className="glass-card overflow-hidden w-full transition-all duration-300 rounded-[1.5rem] sm:rounded-[2rem]">
-                  <AccordionTrigger className="px-5 sm:px-8 py-6 hover:no-underline hover:bg-secondary/10 transition-colors">
+              <Card key={leader.id} className="glass-card overflow-hidden w-full transition-all duration-300 rounded-[1.5rem] sm:rounded-[2rem] border-white/5 shadow-xl">
+                <div className="px-5 sm:px-8 py-6 bg-secondary/20 border-b border-white/5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4 text-left min-w-0">
-                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
+                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0 shadow-lg">
                         <User className="size-6 text-accent" />
                       </div>
                       <div className="min-w-0">
@@ -177,82 +176,90 @@ export function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="p-0 border-t border-white/5">
-                    <ScrollArea className="w-full">
-                      <div className="min-w-[800px] w-full">
-                        <Table>
-                          <TableHeader className="bg-secondary/20">
-                            <TableRow className="hover:bg-transparent border-white/5">
-                              <TableHead className="w-[200px] font-bold py-4">Member</TableHead>
-                              <TableHead className="font-bold">Status</TableHead>
-                              <TableHead className="font-bold">Growth</TableHead>
-                              <TableHead className="font-bold">Targets</TableHead>
-                              <TableHead className="font-bold">Notes</TableHead>
-                              <TableHead className="text-right font-bold pr-8">Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {leaderMembers.length > 0 ? (
-                              leaderMembers.map(member => (
-                                <TableRow key={member.id} className="hover:bg-secondary/5 group transition-colors border-white/5">
-                                  <TableCell className="font-bold text-sm pl-8">{member.name}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">
-                                      {member.status}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex gap-1">
-                                      {SOL_STAGES.map(s => (
-                                        <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">
-                                          {s[0]}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground font-medium">
-                                    {member.targetToDo?.join(', ') || '-'}
-                                  </TableCell>
-                                  <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic leading-tight">
-                                    {member.remarks || '-'}
-                                  </TableCell>
-                                  <TableCell className="text-right pr-8">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all"><MoreHorizontal className="size-5" /></Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48">
-                                        <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold">
-                                          <Edit className="size-4" /> Edit Journey
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator className="mx-2 opacity-50" />
-                                        <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
-                                          <Trash2 className="size-4" /> Delete Record
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic text-xs tracking-wide">
-                                  No members assigned to this group yet.
+                  </div>
+                </div>
+                
+                <CardContent className="p-0">
+                  <ScrollArea className="w-full">
+                    <div className="min-w-[800px] w-full">
+                      <Table>
+                        <TableHeader className="bg-secondary/10">
+                          <TableRow className="hover:bg-transparent border-white/5">
+                            <TableHead className="w-[200px] font-bold py-4 pl-8">Member</TableHead>
+                            <TableHead className="font-bold">Status</TableHead>
+                            <TableHead className="font-bold">Growth</TableHead>
+                            <TableHead className="font-bold">Targets</TableHead>
+                            <TableHead className="font-bold">Notes</TableHead>
+                            <TableHead className="text-right font-bold pr-8">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leaderMembers.length > 0 ? (
+                            leaderMembers.map(member => (
+                              <TableRow key={member.id} className="hover:bg-secondary/5 group transition-colors border-white/5">
+                                <TableCell className="font-bold text-sm pl-8">
+                                  <div className="flex items-center gap-2">
+                                    <div className="size-2 rounded-full bg-accent/40" />
+                                    {member.name}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">
+                                    {member.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    {SOL_STAGES.map(s => (
+                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">
+                                        {s[0]}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground font-medium">
+                                  {member.targetToDo?.join(', ') || '-'}
+                                </TableCell>
+                                <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic leading-tight">
+                                  {member.remarks || '-'}
+                                </TableCell>
+                                <TableCell className="text-right pr-8">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all">
+                                        <MoreHorizontal className="size-5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
+                                      <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold">
+                                        <Edit className="size-4" /> Edit Journey
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator className="mx-2 opacity-50" />
+                                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
+                                        <Trash2 className="size-4" /> Delete Record
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </TableCell>
                               </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <ScrollBar orientation="horizontal" className="h-2 bg-secondary/20" />
-                    </ScrollArea>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic text-xs tracking-wide">
+                                No members assigned to this group yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <ScrollBar orientation="horizontal" className="h-2 bg-secondary/40" />
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             );
           })}
-        </Accordion>
+        </div>
       </div>
 
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
