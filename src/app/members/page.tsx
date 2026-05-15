@@ -50,6 +50,7 @@ export default function MemberRegistry() {
     name: '',
     status: 'Active' as MemberStatus,
     role: 'Member' as UserRole,
+    phoneNumber: '',
     ladderOfSuccess: [] as string[],
     targetToDo: '',
     remarks: ''
@@ -67,7 +68,6 @@ export default function MemberRegistry() {
     }
     
     if (currentUser.role === 'Leader') {
-      // Removed orderBy to ensure it works without composite index requirements
       return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
     }
     
@@ -84,8 +84,9 @@ export default function MemberRegistry() {
     setEditingMember(member);
     setFormData({
       name: member.name || '',
-      status: (member.status === 'On Leave' || member.status === 'Trial') ? 'Active' : (member.status || 'Active'),
+      status: member.status || 'Active',
       role: member.role || 'Member',
+      phoneNumber: member.phoneNumber || '',
       ladderOfSuccess: member.ladderOfSuccess || [],
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || ''
@@ -147,6 +148,7 @@ export default function MemberRegistry() {
       name: '',
       status: 'Active',
       role: 'Member',
+      phoneNumber: '',
       ladderOfSuccess: [],
       targetToDo: '',
       remarks: ''
@@ -218,7 +220,7 @@ export default function MemberRegistry() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold">Members</h1>
-            <p className="text-sm text-muted-foreground">Manage your team and track their growth journey.</p>
+            <p className="text-sm text-muted-foreground">Manage your team and track their progress.</p>
           </div>
           <Button className="gap-2 h-11" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
             <Plus className="size-4" />
@@ -251,14 +253,14 @@ export default function MemberRegistry() {
                   <TableRow>
                     <TableHead>Member</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Progress</TableHead>
+                    <TableHead>Ladder of Success</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">Loading team records...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">Loading members...</TableCell></TableRow>
                   ) : filteredMembers.length > 0 ? (
                     filteredMembers.map((member: any) => (
                       <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors">
@@ -298,7 +300,7 @@ export default function MemberRegistry() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No team members found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">No members found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -346,7 +348,7 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
-            <DialogDescription>Add a new person to your team and track their growth journey.</DialogDescription>
+            <DialogDescription>Add a new person to the team and track their journey.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -360,7 +362,7 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Edit Member</DialogTitle>
-            <DialogDescription>Update progress information for {editingMember?.name}.</DialogDescription>
+            <DialogDescription>Update progress for {editingMember?.name}.</DialogDescription>
           </DialogHeader>
           <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           <DialogFooter className="gap-2">
@@ -405,9 +407,18 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label>Phone Number</Label>
+        <Input 
+          value={formData.phoneNumber} 
+          onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })} 
+          placeholder="+63 928 2346 158" 
+        />
+      </div>
+
       <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">
         <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
-          <CheckCircle2 className="size-4" /> Ladder of Success (SOL)
+          <CheckCircle2 className="size-4" /> Ladder of Success
         </Label>
         <div className="grid grid-cols-2 gap-4">
           {SOL_STAGES.map(stage => (
@@ -426,7 +437,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         <Input 
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="e.g. Finish First Step, Invite someone (comma separated)" 
+          placeholder="e.g. Finish First Step, Invite a friend" 
         />
       </div>
 
@@ -437,7 +448,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          placeholder="Add any additional details or progress notes..." 
+          placeholder="Add any progress notes or follow-up actions..." 
           className="min-h-[100px]"
         />
       </div>
@@ -452,7 +463,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem onClick={onEdit} className="gap-2"><Edit className="size-4" /> Edit Profile</DropdownMenuItem>
+        <DropdownMenuItem onClick={onEdit} className="gap-2"><Edit className="size-4" /> Edit Progress</DropdownMenuItem>
         
         {isAdmin && (
           <>

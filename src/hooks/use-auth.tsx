@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = userDoc.data();
           setUser({
             id: firebaseUser.uid,
-            name: userData.name || 'Anonymous',
+            name: userData.name || 'User',
             email: firebaseUser.email || '',
             role: userData.role || 'Member',
           });
@@ -84,7 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       
-      setDoc(userDocRef, newUser);
+      // Await setDoc to ensure the document exists before the UI tries to query roles
+      await setDoc(userDocRef, newUser);
       
       setUser({
         id: firebaseUser.uid,

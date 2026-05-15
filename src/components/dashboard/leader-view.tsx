@@ -5,7 +5,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Circle, User, Mail, ChevronRight, CheckCircle2, ClipboardList, TrendingUp } from 'lucide-react';
+import { Circle, User, Mail, ChevronRight, ClipboardList } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
@@ -39,7 +39,7 @@ export function LeaderDashboard() {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 sm:gap-2">
         <h1 className="text-2xl sm:text-3xl font-headline font-bold">Team Overview</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Keep track of your group's progress and milestones.</p>
+        <p className="text-sm sm:text-base text-muted-foreground">Keep track of your group's growth and milestones.</p>
       </div>
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -60,8 +60,7 @@ export function LeaderDashboard() {
                   </div>
                   <CardTitle className="text-lg line-clamp-1">{member.name}</CardTitle>
                   <CardDescription className="flex items-center gap-1.5 text-xs truncate">
-                    <Mail className="size-3" />
-                    {member.email}
+                    {member.phoneNumber || 'No phone recorded'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-6 pt-0">
@@ -102,7 +101,7 @@ export function LeaderDashboard() {
 
                   <div className="pt-2">
                     <Button variant="ghost" size="sm" className="w-full justify-between text-[11px] group/btn" onClick={() => router.push('/members')}>
-                      View Member Progress
+                      View Full Profile
                       <ChevronRight className="size-3 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>
                   </div>
@@ -115,9 +114,9 @@ export function LeaderDashboard() {
             <div className="h-16 w-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
                <User className="size-8 text-muted-foreground/50" />
             </div>
-            <h3 className="text-lg font-bold">No members yet</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">You haven't added anyone to your team yet.</p>
-            <Button className="mt-6 h-10" onClick={() => router.push('/members')}>Add Your First Member</Button>
+            <h3 className="text-lg font-bold">No members added</h3>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">Start tracking your team by adding your first member.</p>
+            <Button className="mt-6 h-10" onClick={() => router.push('/members')}>Add Member</Button>
           </div>
         )}
       </div>

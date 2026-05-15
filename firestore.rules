@@ -2,17 +2,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function hasRole(role) {
-      return request.auth != null && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     function isAdmin() {
-      return hasRole('Admin');
+      return request.auth != null && getRole() == 'Admin';
     }
 
     function isLeader() {
-      return hasRole('Leader');
+      return request.auth != null && getRole() == 'Leader';
     }
 
     match /users/{userId} {

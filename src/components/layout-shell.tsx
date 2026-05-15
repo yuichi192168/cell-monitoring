@@ -16,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
@@ -75,7 +74,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="sm:hidden" />
-                <DropdownMenuLabel className="hidden sm:block">My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="hidden sm:block">Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')} className="gap-2 cursor-pointer py-3 sm:py-2">
                   <Settings className="size-4" />
