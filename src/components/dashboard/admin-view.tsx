@@ -5,7 +5,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
-import { Users, UserCheck, TrendingUp, Activity } from 'lucide-react';
+import { Users, UserCheck, TrendingUp, Activity, User } from 'lucide-react';
 import { 
   BarChart, 
   Bar, 
@@ -120,12 +120,8 @@ export function AdminDashboard() {
                ) : recentMembers.length > 0 ? (
                  recentMembers.map((member: any) => (
                    <div key={member.id} className="flex items-center gap-4">
-                     <div className="h-9 w-9 rounded-full bg-secondary border border-border flex items-center justify-center font-bold text-xs overflow-hidden">
-                       {member.avatarUrl ? (
-                         <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
-                       ) : (
-                         member.name?.substring(0, 2)
-                       )}
+                     <div className="h-9 w-9 rounded-full bg-secondary border border-border flex items-center justify-center">
+                        <User className="size-4 text-muted-foreground" />
                      </div>
                      <div className="flex-1 space-y-1">
                        <p className="text-sm font-medium leading-none">{member.name}</p>

@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Sparkles, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, Circle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -70,12 +70,8 @@ export function LeaderDashboard() {
             <Card key={member.id} className="glass-card flex flex-col">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center font-bold text-lg mb-2 border border-border overflow-hidden">
-                    {member.avatarUrl ? (
-                      <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
-                    ) : (
-                      member.name?.substring(0, 2)
-                    )}
+                  <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center border border-border mb-2">
+                    <User className="size-6 text-muted-foreground" />
                   </div>
                   <Badge variant={member.status === 'Active' ? 'default' : 'outline'}>
                     {member.status}

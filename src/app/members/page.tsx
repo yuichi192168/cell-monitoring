@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert, Lock } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert, Lock, User } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -165,12 +165,8 @@ export default function MemberManagement() {
                       <TableRow key={member.id} className="group transition-colors hover:bg-secondary/20">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs overflow-hidden">
-                              {member.avatarUrl ? (
-                                <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
-                              ) : (
-                                member.name?.substring(0, 2)
-                              )}
+                            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center border border-border">
+                              <User className="size-4 text-muted-foreground" />
                             </div>
                             <div>
                               <div className="font-medium">{member.name}</div>

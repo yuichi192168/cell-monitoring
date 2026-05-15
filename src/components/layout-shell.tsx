@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/app-sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { User } from 'lucide-react';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -36,8 +37,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               <p className="font-medium">{user.name}</p>
               <p className="text-muted-foreground text-xs">{user.role}</p>
             </div>
-            <div className="h-10 w-10 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden">
-               <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+            <div className="h-10 w-10 rounded-full bg-secondary border border-border flex items-center justify-center">
+               <User className="size-5 text-muted-foreground" />
             </div>
           </div>
         </header>

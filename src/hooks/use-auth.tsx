@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: userData.name || 'Anonymous',
             email: firebaseUser.email || '',
             role: userData.role || 'Member',
-            avatarUrl: userData.avatarUrl || undefined,
           });
         } else {
           setUser(null);
@@ -82,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status: 'Active',
         ladderOfSuccess: [],
         targetToDo: [],
-        avatarUrl: `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
         createdAt: new Date().toISOString(),
       };
       
@@ -93,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role as UserRole,
-        avatarUrl: newUser.avatarUrl,
       });
     } catch (error: any) {
       errorEmitter.emit('auth-error', error);
