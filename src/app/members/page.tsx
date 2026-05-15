@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -29,6 +30,16 @@ import {
   DialogDescription, 
   DialogFooter 
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserRole, MemberStatus, SOL_STAGES } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -46,6 +57,7 @@ export default function MemberRegistry() {
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -153,10 +165,10 @@ export default function MemberRegistry() {
     });
   };
 
-  const handleDeleteMember = (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this person? This action cannot be undone.")) return;
+  const confirmDelete = () => {
+    if (!memberToDelete) return;
     
-    const userRef = doc(db, 'users', memberId);
+    const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -165,6 +177,8 @@ export default function MemberRegistry() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
+    
+    setMemberToDelete(null);
   };
 
   const handleChangeRole = (memberId: string, newRole: UserRole) => {
@@ -285,7 +299,7 @@ export default function MemberRegistry() {
                                 member={member} 
                                 currentUser={currentUser} 
                                 onEdit={() => openEditModal(member)} 
-                                onDelete={handleDeleteMember}
+                                onDelete={() => setMemberToDelete(member)}
                                 onChangeRole={handleChangeRole}
                               />
                             </TableCell>
@@ -322,7 +336,7 @@ export default function MemberRegistry() {
                         member={member} 
                         currentUser={currentUser} 
                         onEdit={() => openEditModal(member)} 
-                        onDelete={handleDeleteMember}
+                        onDelete={() => setMemberToDelete(member)}
                         onChangeRole={handleChangeRole}
                       />
                     </div>
@@ -383,7 +397,7 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">Edit Member Journey</DialogTitle>
+              <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">Update the progress and targets for {editingMember?.name}.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
@@ -394,6 +408,22 @@ export default function MemberRegistry() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent className="rounded-[2rem] border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium">
+              Are you sure you want to remove <span className="font-bold text-foreground">{memberToDelete?.name}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-white/5 h-12 font-bold">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground h-12 font-black">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </LayoutShell>
   );
 }
@@ -511,7 +541,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         
         {isAdmin && (
           <>
-            <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/60 font-black p-3 pb-1.5">System Roles</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black p-3 pb-1.5">System Roles</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
               <User className="size-5" /> Cell Member
             </DropdownMenuItem>
@@ -524,7 +554,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
 
         {/* Both Admins and Leaders can delete members assigned to them */}
         {(isAdmin || isLeader) && (
-          <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
+          <DropdownMenuItem onClick={onDelete} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
             <Trash2 className="size-5" /> 
             <span className="font-bold">Delete</span>
           </DropdownMenuItem>

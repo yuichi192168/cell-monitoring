@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -27,6 +28,16 @@ import {
   DialogDescription, 
   DialogFooter 
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -44,6 +55,7 @@ export function AdminDashboard() {
   
   // Edit State
   const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     status: 'Active' as MemberStatus,
@@ -104,12 +116,13 @@ export function AdminDashboard() {
     setEditingMember(null);
   };
 
-  const handleDeleteMember = (memberId: string) => {
-    if (!confirm("Remove this person? This cannot be undone.")) return;
-    const userRef = doc(db, 'users', memberId);
+  const confirmDelete = () => {
+    if (!memberToDelete) return;
+    const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef).catch(async () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
     });
+    setMemberToDelete(null);
   };
 
   const toggleSOL = (stage: string) => {
@@ -181,7 +194,7 @@ export function AdminDashboard() {
                 
                 <CardContent className="p-0">
                   <ScrollArea className="w-full">
-                    <div className="min-w-[800px] w-full">
+                    <div className="min-w-[800px] w-full pb-2">
                       <Table>
                         <TableHeader className="bg-secondary/10">
                           <TableRow className="hover:bg-transparent border-white/5">
@@ -235,7 +248,7 @@ export function AdminDashboard() {
                                         <Edit className="size-4" /> Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="mx-2 opacity-50" />
-                                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
+                                      <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
                                         <Trash2 className="size-4" /> Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -262,11 +275,12 @@ export function AdminDashboard() {
         </div>
       </div>
 
+      {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] overflow-y-auto max-h-[90vh] p-0 border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">Edit Member Profile</DialogTitle>
+              <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
               <DialogDescription className="text-muted-foreground font-medium">Update progress and growth notes for {editingMember?.name}.</DialogDescription>
             </DialogHeader>
             
@@ -356,6 +370,22 @@ export function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent className="rounded-[2rem] border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium">
+              Are you sure you want to remove <span className="font-bold text-foreground">{memberToDelete?.name}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-white/5 h-12 font-bold">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground h-12 font-black">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
