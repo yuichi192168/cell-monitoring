@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export default function MemberRegistry() {
   const { user: currentUser } = useAuth();
@@ -440,21 +440,25 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
           <CheckCircle2 className="size-4" /> Ladder of Success
         </Label>
         <div className="grid grid-cols-2 gap-3">
-          {SOL_STAGES.map(stage => (
-            <div 
-              key={stage} 
-              className="flex items-center space-x-3 p-3 bg-secondary/10 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 cursor-pointer" 
-              onClick={() => toggleSOL(stage)}
-            >
-              <Checkbox 
-                id={stage} 
-                checked={formData.ladderOfSuccess.includes(stage)} 
-                onCheckedChange={() => toggleSOL(stage)}
-                className="h-5 w-5 rounded-md border-muted-foreground/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent"
-              />
-              <Label htmlFor={stage} className="text-xs font-bold cursor-pointer select-none uppercase tracking-tighter">{stage}</Label>
-            </div>
-          ))}
+          {SOL_STAGES.map(stage => {
+            const isActive = formData.ladderOfSuccess.includes(stage);
+            return (
+              <button 
+                key={stage} 
+                type="button"
+                className={cn(
+                  "flex items-center justify-between p-4 rounded-2xl transition-all border text-left active:scale-[0.97]",
+                  isActive 
+                    ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
+                    : "bg-secondary/10 border-white/5 text-muted-foreground hover:bg-white/5"
+                )} 
+                onClick={() => toggleSOL(stage)}
+              >
+                <span className="text-xs font-black uppercase tracking-tighter">{stage}</span>
+                {isActive ? <Check className="size-4 shrink-0" /> : <div className="size-4 rounded-full border border-white/20 shrink-0" />}
+              </button>
+            );
+          })}
         </div>
       </div>
 

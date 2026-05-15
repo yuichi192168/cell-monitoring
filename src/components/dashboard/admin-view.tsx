@@ -1,11 +1,10 @@
-
 "use client"
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User } from 'lucide-react';
+import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User, Check } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -36,6 +35,7 @@ import { SOL_STAGES, UserRole, MemberStatus } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export function AdminDashboard() {
   const { user: currentUser } = useAuth();
@@ -60,12 +60,12 @@ export function AdminDashboard() {
 
   const { data: allUsers, loading } = useCollection(allUsersQuery);
 
-  const leaders = allUsers.filter(u => u.role === 'Leader');
-  const members = allUsers.filter(u => u.role === 'Member');
+  const leaders = (allUsers || []).filter(u => u.role === 'Leader');
+  const members = (allUsers || []).filter(u => u.role === 'Member');
 
   const stats = {
-    totalUsers: allUsers.length,
-    activeMembers: allUsers.filter(m => m.status === 'Active').length,
+    totalUsers: allUsers?.length || 0,
+    activeMembers: (allUsers || []).filter(m => m.status === 'Active').length,
     leadersCount: leaders.length,
   };
 
@@ -302,20 +302,25 @@ export function AdminDashboard() {
                   <CheckCircle2 className="size-4" /> Ladder of Success
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
-                  {SOL_STAGES.map(stage => (
-                    <div 
-                      key={stage} 
-                      className="flex items-center space-x-3 cursor-pointer group p-3 bg-secondary/10 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5"
-                      onClick={() => toggleSOL(stage)}
-                    >
-                      <Checkbox 
-                        id={stage} 
-                        checked={formData.ladderOfSuccess.includes(stage)} 
-                        className="h-5 w-5 rounded-md border-muted-foreground/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent pointer-events-none"
-                      />
-                      <Label htmlFor={stage} className="text-xs font-bold cursor-pointer select-none pointer-events-none">{stage}</Label>
-                    </div>
-                  ))}
+                  {SOL_STAGES.map(stage => {
+                    const isActive = formData.ladderOfSuccess.includes(stage);
+                    return (
+                      <button 
+                        key={stage} 
+                        type="button"
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-2xl transition-all border text-left active:scale-[0.97]",
+                          isActive 
+                            ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
+                            : "bg-secondary/10 border-white/5 text-muted-foreground hover:bg-white/5"
+                        )} 
+                        onClick={() => toggleSOL(stage)}
+                      >
+                        <span className="text-xs font-black uppercase tracking-tighter">{stage}</span>
+                        {isActive ? <Check className="size-4 shrink-0" /> : <div className="size-4 rounded-full border border-white/20 shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
