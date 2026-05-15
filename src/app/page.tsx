@@ -1,23 +1,66 @@
+
 "use client"
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Target, LogIn, UserPlus } from 'lucide-react';
+import { Shield, Users, Target, LogIn, UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserRole } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
-  const { login, user, isLoading } = useAuth();
+  const { login, register, user, isLoading } = useAuth();
   const router = useRouter();
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const { toast } = useToast();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('Member');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     if (user && !isLoading) {
       router.push('/dashboard');
     }
   }, [user, isLoading, router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await register(email, password, name, selectedRole);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "Could not create account. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -40,11 +83,11 @@ export default function AuthPage() {
           <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary text-primary-foreground font-bold text-2xl mb-4 shadow-xl shadow-primary/20">
             CN
           </div>
-          <h1 className="text-4xl font-headline font-bold tracking-tighter">CellNexus</h1>
+          <h1 className="text-4xl font-headline font-bold tracking-tighter text-foreground">CellNexus</h1>
           <p className="text-muted-foreground">Strategic Member Growth & Monitoring System</p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full" onValueChange={(v) => setAuthMode(v as any)}>
+        <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 bg-secondary/50 p-1">
             <TabsTrigger value="login" className="gap-2">
               <LogIn className="size-4" />
@@ -58,73 +101,147 @@ export default function AuthPage() {
 
           <TabsContent value="login">
             <Card className="glass-card border-white/5">
-              <CardHeader>
-                <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>Authorize access to your tactical dashboard.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  className="w-full h-14 text-lg font-semibold gap-3" 
-                  onClick={() => login()}
-                >
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="size-6" />
-                  Continue with Google
-                </Button>
-              </CardContent>
-              <CardFooter className="flex justify-center border-t border-white/5 pt-6">
-                <p className="text-xs text-muted-foreground text-center">
-                  By signing in, you agree to our Terms of Operation.
-                </p>
-              </CardFooter>
+              <form onSubmit={handleLogin}>
+                <CardHeader>
+                  <CardTitle>Welcome Back</CardTitle>
+                  <CardDescription>Enter your credentials to access the tactical dashboard.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input 
+                        id="login-email"
+                        type="email" 
+                        placeholder="name@example.com" 
+                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input 
+                        id="login-password"
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isSubmitting}>
+                    {isSubmitting ? "Authenticating..." : "Sign In"}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground text-center uppercase tracking-widest">
+                    Secure encrypted authentication
+                  </p>
+                </CardFooter>
+              </form>
             </Card>
           </TabsContent>
 
           <TabsContent value="register">
             <Card className="glass-card border-white/5">
-              <CardHeader>
-                <CardTitle>System Enrollment</CardTitle>
-                <CardDescription>Select your initial clearance level (MVP Demo)</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-14 bg-secondary/20 hover:bg-secondary/40 border-white/5" 
-                  onClick={() => login('Admin')}
-                >
-                  <Shield className="mr-3 size-5 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium text-sm leading-none mb-1">Administrator</p>
-                    <p className="text-[10px] text-muted-foreground">Global oversight & system config</p>
+              <form onSubmit={handleRegister}>
+                <CardHeader>
+                  <CardTitle>System Enrollment</CardTitle>
+                  <CardDescription>Create your account and select clearance level.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-name">Full Name</Label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input 
+                        id="reg-name"
+                        placeholder="John Doe" 
+                        className="pl-10"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-14 bg-secondary/20 hover:bg-secondary/40 border-white/5" 
-                  onClick={() => login('Leader')}
-                >
-                  <Users className="mr-3 size-5 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium text-sm leading-none mb-1">Leader</p>
-                    <p className="text-[10px] text-muted-foreground">Direct pod monitoring & coaching</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input 
+                        id="reg-email"
+                        type="email" 
+                        placeholder="name@example.com" 
+                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-14 bg-secondary/20 hover:bg-secondary/40 border-white/5" 
-                  onClick={() => login('Member')}
-                >
-                  <Target className="mr-3 size-5 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium text-sm leading-none mb-1">Member</p>
-                    <p className="text-[10px] text-muted-foreground">Personal growth map & targets</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input 
+                        id="reg-password"
+                        type="password" 
+                        placeholder="Min. 6 characters" 
+                        className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                    </div>
                   </div>
-                </Button>
-              </CardContent>
-              <CardFooter className="flex justify-center border-t border-white/5 pt-6">
-                <p className="text-[10px] text-muted-foreground text-center uppercase tracking-widest">
-                  Authentication via Google Secure Auth
-                </p>
-              </CardFooter>
+                  <div className="space-y-2">
+                    <Label>Initial Clearance Level</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button 
+                        type="button"
+                        variant={selectedRole === 'Member' ? 'default' : 'outline'} 
+                        className="h-10 text-[10px] uppercase font-bold"
+                        onClick={() => setSelectedRole('Member')}
+                      >
+                        Member
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={selectedRole === 'Leader' ? 'default' : 'outline'} 
+                        className="h-10 text-[10px] uppercase font-bold"
+                        onClick={() => setSelectedRole('Leader')}
+                      >
+                        Leader
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={selectedRole === 'Admin' ? 'default' : 'outline'} 
+                        className="h-10 text-[10px] uppercase font-bold"
+                        onClick={() => setSelectedRole('Admin')}
+                      >
+                        Admin
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isSubmitting}>
+                    {isSubmitting ? "Enrolling..." : "Complete Enrollment"}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    By enrolling, you agree to the Terms of Operation.
+                  </p>
+                </CardFooter>
+              </form>
             </Card>
           </TabsContent>
         </Tabs>

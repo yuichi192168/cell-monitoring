@@ -2,14 +2,21 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 import { User, UserRole } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 interface AuthContextType {
   user: User | null;
-  login: (requestedRole?: UserRole) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -23,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
@@ -32,13 +39,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = userDoc.data();
           setUser({
             id: firebaseUser.uid,
-            name: userData.name || firebaseUser.displayName || 'Anonymous',
+            name: userData.name || 'Anonymous',
             email: firebaseUser.email || '',
             role: userData.role || 'Member',
-            avatarUrl: userData.avatarUrl || firebaseUser.photoURL || undefined,
+            avatarUrl: userData.avatarUrl || undefined,
           });
         } else {
-          // Fallback if doc doesn't exist yet but user is authed
           setUser(null);
         }
       } else {
@@ -50,38 +56,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [auth, db]);
 
-  const login = async (requestedRole: UserRole = 'Member') => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      errorEmitter.emit('auth-error', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string, name: string, role: UserRole) => {
+    setIsLoading(true);
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = result.user;
       
       const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const newUser = {
-          name: firebaseUser.displayName,
-          email: firebaseUser.email,
-          role: requestedRole, // For MVP demo purposes, we allow setting role on first login
-          status: 'Active',
-          ladderOfSuccess: [],
-          targetToDo: [],
-          avatarUrl: firebaseUser.photoURL,
-          createdAt: new Date().toISOString(),
-        };
-        await setDoc(userDocRef, newUser);
-        setUser({
-          id: firebaseUser.uid,
-          name: newUser.name || '',
-          email: newUser.email || '',
-          role: newUser.role as UserRole,
-          avatarUrl: newUser.avatarUrl || undefined,
-        });
-      }
-    } catch (error) {
-      console.error("Login failed", error);
+      const newUser = {
+        name,
+        email,
+        role,
+        status: 'Active',
+        ladderOfSuccess: [],
+        targetToDo: [],
+        avatarUrl: `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setDoc(userDocRef, newUser);
+      
+      setUser({
+        id: firebaseUser.uid,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role as UserRole,
+        avatarUrl: newUser.avatarUrl,
+      });
+    } catch (error: any) {
+      errorEmitter.emit('auth-error', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
