@@ -1,9 +1,8 @@
-
 {
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile containing role, growth milestones, and assigned leadership details.",
+      "description": "User profile containing role, growth milestones (SOL), targets, and remarks.",
       "type": "object",
       "properties": {
         "name": {
@@ -28,20 +27,20 @@
         "ladderOfSuccess": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "List of achieved milestones"
+          "description": "List of achieved SOL milestones (e.g., Win, Consolidate, Discipleship)"
         },
         "targetToDo": {
           "type": "array",
           "items": { "type": "string" },
           "description": "List of active goals or tasks"
         },
+        "remarks": {
+          "type": "string",
+          "description": "Additional notes or follow-up actions for the member"
+        },
         "assignedLeaderId": {
           "type": "string",
           "description": "The UID of the leader managing this member"
-        },
-        "avatarUrl": {
-          "type": "string",
-          "description": "URL to the user's avatar image"
         },
         "createdAt": {
           "type": "string",
