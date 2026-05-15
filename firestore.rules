@@ -9,6 +9,8 @@ service cloud.firestore {
 
     // Helper to get current user data
     function getUserData() {
+      // Fetches the user document from the users collection based on UID.
+      // This is used to determine the user's role and permissions.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
@@ -30,11 +32,15 @@ service cloud.firestore {
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
       
-      // LIST: Admins can list all. 
-      // Leaders can list ONLY IF they filter by their own assignedLeaderId.
+      // LIST: Admins can list all users.
+      // Leaders can list users ONLY IF they apply a filter for their own assignedLeaderId.
       allow list: if isAuthenticated() && (
         isAdmin() || 
-        (isLeader() && request.query.filters.assignedLeaderId == request.auth.uid)
+        (isLeader() && (
+          // Handles the filter whether it's passed as a single string or a list containing the UID.
+          request.query.filters.assignedLeaderId == [request.auth.uid] ||
+          request.query.filters.assignedLeaderId == request.auth.uid
+        ))
       );
 
       // CREATE: Users can create their own profile. Admins can create any. 
