@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -8,6 +9,7 @@ import { doc } from 'firebase/firestore';
 import { Target, Trophy, Clock, Milestone, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { Badge } from '@/components/ui/badge';
 
 export function MemberDashboard() {
   const { user } = useAuth();
@@ -31,6 +33,12 @@ export function MemberDashboard() {
 
   const ladderLength = member.ladderOfSuccess?.length || 0;
   const progressValue = Math.min((ladderLength / 5) * 100, 100);
+
+  const getRoleDisplay = (role: string) => {
+    if (role === 'Admin') return 'Primary Leader';
+    if (role === 'Leader') return 'Cell Leader';
+    return 'Cell Member';
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
@@ -127,7 +135,7 @@ export function MemberDashboard() {
                <div className="text-center space-y-1">
                  <p className="text-xl font-bold tracking-tight">{member.status}</p>
                  <Badge variant="secondary" className="text-[10px] uppercase tracking-[0.2em] font-black px-4 bg-secondary/80 border-none">
-                   {member.role}
+                   {getRoleDisplay(member.role)}
                  </Badge>
                </div>
             </CardContent>

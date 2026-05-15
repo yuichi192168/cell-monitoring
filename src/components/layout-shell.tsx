@@ -34,7 +34,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   };
 
   const getRoleDisplay = (role: string) => {
-    return role === 'Admin' ? 'Primary Leader' : role;
+    if (role === 'Admin') return 'Primary Leader';
+    if (role === 'Leader') return 'Cell Leader';
+    return 'Cell Member';
   };
 
   if (isLoading || !user) {

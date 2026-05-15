@@ -29,7 +29,7 @@ export default function DashboardDispatcher() {
             <div className="space-y-2">
               <h2 className="text-2xl font-headline font-bold">Access Restricted</h2>
               <p className="text-muted-foreground max-w-sm mx-auto">
-                Only tactical monitors (Leaders and Primary Leaders) are permitted to access the monitoring infrastructure.
+                Only tactical monitors (Cell Leaders and Primary Leaders) are permitted to access the monitoring infrastructure.
               </p>
             </div>
             <Button onClick={() => logout().then(() => router.push('/'))} variant="outline" size="lg" className="w-full max-w-xs">

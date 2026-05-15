@@ -48,15 +48,12 @@ export default function MemberManagement() {
   const db = useFirestore();
 
   const membersQuery = useMemoFirebase(() => {
-    // Crucial: Only initiate query if we have a valid role session to prevent permission errors
     if (!currentUser || !currentUser.role) return null;
     
-    // Admins (Primary Leaders) see everything
     if (currentUser.role === 'Admin') {
       return query(collection(db, 'users'), orderBy('name', 'asc'));
     }
     
-    // Leaders only see their assigned members
     if (currentUser.role === 'Leader') {
       return query(
         collection(db, 'users'), 
@@ -103,7 +100,7 @@ export default function MemberManagement() {
       status: 'Active',
       ladderOfSuccess: [],
       targetToDo: [],
-      assignedLeaderId: currentUser.id, // Automatically assign to the current leader
+      assignedLeaderId: currentUser.id,
       createdAt: new Date().toISOString(),
     };
 
@@ -137,7 +134,9 @@ export default function MemberManagement() {
   };
 
   const getRoleDisplay = (role: string) => {
-    return role === 'Admin' ? 'Primary Leader' : role;
+    if (role === 'Admin') return 'Primary Leader';
+    if (role === 'Leader') return 'Cell Leader';
+    return 'Cell Member';
   };
 
   if (currentUser && currentUser.role === 'Member') {
@@ -196,7 +195,6 @@ export default function MemberManagement() {
             </div>
           </CardHeader>
           <CardContent className="pt-4 sm:pt-6 px-0 sm:px-6">
-            {/* Desktop Table View */}
             <div className="hidden sm:block rounded-md border border-border">
               <Table>
                 <TableHeader className="bg-secondary/30">
@@ -267,7 +265,6 @@ export default function MemberManagement() {
               </Table>
             </div>
 
-            {/* Mobile Card View */}
             <div className="sm:hidden px-4 space-y-4">
               {loading ? (
                 <div className="py-12 text-center text-muted-foreground">Syncing data...</div>
@@ -329,13 +326,12 @@ export default function MemberManagement() {
         </Card>
       </div>
 
-      {/* Add Member Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md w-[90vw] rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Enroll New Member</DialogTitle>
+            <DialogTitle>Enroll New Cell Member</DialogTitle>
             <DialogDescription>
-              Initialize a new tactical member record.
+              Initialize a new tactical record.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddMember} className="space-y-4 py-4">
@@ -368,7 +364,6 @@ export default function MemberManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Role Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-md w-[90vw] rounded-2xl">
           <DialogHeader>
@@ -383,7 +378,7 @@ export default function MemberManagement() {
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Member">Member</SelectItem>
+                <SelectItem value="Member">Cell Member</SelectItem>
                 <SelectItem value="Leader">Cell Leader</SelectItem>
                 <SelectItem value="Admin">Primary Leader</SelectItem>
               </SelectContent>
