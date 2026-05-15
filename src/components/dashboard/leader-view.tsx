@@ -1,9 +1,10 @@
+
 "use client"
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Circle, User, ChevronRight, ClipboardList, StickyNote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
@@ -19,9 +20,13 @@ export function LeaderDashboard() {
   const router = useRouter();
 
   const teamQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, 'users'), where('assignedLeaderId', '==', user.id));
-  }, [db, user]);
+    if (!user || !user.id) return null;
+    return query(
+      collection(db, 'users'), 
+      where('assignedLeaderId', '==', user.id),
+      orderBy('name', 'asc')
+    );
+  }, [db, user?.id]);
 
   const { data: members, loading } = useCollection(teamQuery);
 

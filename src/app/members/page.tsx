@@ -45,7 +45,6 @@ import { UserRole, MemberStatus, SOL_STAGES } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -80,7 +79,7 @@ export default function MemberRegistry() {
     }
     
     if (currentUser.role === 'Leader') {
-      return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
+      return query(usersRef, where('assignedLeaderId', '==', currentUser.id), orderBy('name', 'asc'));
     }
     
     return null;
@@ -89,8 +88,7 @@ export default function MemberRegistry() {
   const { data: members, loading } = useCollection(membersQuery);
 
   const filteredMembers = (members || [])
-    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const openEditModal = (member: any) => {
     setEditingMember(member);
@@ -552,7 +550,6 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
           </>
         )}
 
-        {/* Both Admins and Leaders can delete members assigned to them */}
         {(isAdmin || isLeader) && (
           <DropdownMenuItem onClick={onDelete} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
             <Trash2 className="size-5" /> 
