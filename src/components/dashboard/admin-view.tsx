@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Users, UserCheck, Activity, Search, ChevronDown, ChevronRight, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User } from 'lucide-react';
+import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -139,7 +139,7 @@ export function AdminDashboard() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input 
             placeholder="Search members..." 
-            className="pl-9 bg-secondary/20"
+            className="pl-9 bg-secondary/20 h-11"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -153,7 +153,7 @@ export function AdminDashboard() {
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-lg font-bold uppercase tracking-widest text-muted-foreground">Cell Groups</h2>
+        <h2 className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Cell Groups</h2>
         
         <Accordion type="multiple" className="space-y-4">
           {leaders.map(leader => {
@@ -161,71 +161,68 @@ export function AdminDashboard() {
             
             return (
               <AccordionItem key={leader.id} value={leader.id} className="border-none">
-                <Card className="glass-card overflow-hidden">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-secondary/10 transition-colors">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
+                <Card className="glass-card overflow-hidden w-full">
+                  <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline hover:bg-secondary/10 transition-colors">
+                    <div className="flex items-center gap-3 sm:gap-4 text-left min-w-0">
+                      <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
                         <User className="size-5 text-accent" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-base">{leader.name}</h3>
-                        <p className="text-xs text-muted-foreground uppercase tracking-tight">Cell Leader • {leaderMembers.length} Members</p>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-sm sm:text-base truncate">{leader.name}</h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-tight font-medium">Cell Leader • {leaderMembers.length} Members</p>
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
+                  <AccordionContent className="p-0 border-t">
+                    {/* Responsive Table Wrapper */}
+                    <div className="overflow-x-auto w-full">
+                      <Table className="min-w-[700px] sm:min-w-full">
                         <TableHeader className="bg-secondary/20">
                           <TableRow>
-                            <TableHead className="w-[200px]">Member</TableHead>
+                            <TableHead className="w-[180px] sm:w-[220px]">Member</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Growth Stage</TableHead>
-                            <TableHead>Active Goals</TableHead>
+                            <TableHead>Growth</TableHead>
+                            <TableHead>Targets</TableHead>
                             <TableHead>Notes</TableHead>
-                            <TableHead>Added</TableHead>
-                            <TableHead className="text-right">Manage</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {leaderMembers.length > 0 ? (
                             leaderMembers.map(member => (
-                              <TableRow key={member.id} className="hover:bg-secondary/5">
-                                <TableCell className="font-medium text-sm">{member.name}</TableCell>
+                              <TableRow key={member.id} className="hover:bg-secondary/5 group">
+                                <TableCell className="font-semibold text-xs sm:text-sm">{member.name}</TableCell>
                                 <TableCell>
-                                  <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] px-2">
+                                  <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5">
                                     {member.status}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex gap-1">
+                                  <div className="flex flex-wrap gap-1">
                                     {SOL_STAGES.map(s => (
-                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[9px] h-5 px-1.5 border-none">
+                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4 px-1.5 border-none">
                                         {s[0]}
                                       </Badge>
                                     ))}
                                   </div>
                                 </TableCell>
-                                <TableCell className="max-w-[150px] truncate text-[11px] text-muted-foreground">
+                                <TableCell className="max-w-[140px] truncate text-[10px] sm:text-[11px] text-muted-foreground">
                                   {member.targetToDo?.join(', ') || '-'}
                                 </TableCell>
-                                <TableCell className="max-w-[200px] truncate text-[11px] text-muted-foreground italic">
+                                <TableCell className="max-w-[180px] truncate text-[10px] sm:text-[11px] text-muted-foreground italic leading-tight">
                                   {member.remarks || '-'}
-                                </TableCell>
-                                <TableCell className="text-[10px] text-muted-foreground">
-                                  {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="size-4" /></Button>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg"><MoreHorizontal className="size-4" /></Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2">
+                                    <DropdownMenuContent align="end" className="rounded-xl">
+                                      <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2 cursor-pointer">
                                         <Edit className="size-4" /> Edit Profile
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2 text-destructive">
+                                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2 text-destructive cursor-pointer">
                                         <Trash2 className="size-4" /> Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -235,7 +232,7 @@ export function AdminDashboard() {
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground italic">
+                              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic text-xs">
                                 No members assigned to this group yet.
                               </TableCell>
                             </TableRow>
@@ -252,75 +249,84 @@ export function AdminDashboard() {
       </div>
 
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
-        <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Edit Member Profile</DialogTitle>
-            <DialogDescription>Update progress and notes for {editingMember?.name}.</DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-5 py-4">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+        <DialogContent className="sm:max-w-lg w-[95%] rounded-2xl overflow-y-auto max-h-[90vh] p-0">
+          <div className="p-6">
+            <DialogHeader className="mb-4">
+              <DialogTitle>Edit Member Profile</DialogTitle>
+              <DialogDescription>Update progress and growth notes for {editingMember?.name}.</DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(v: MemberStatus) => setFormData({ ...formData, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Full Name</Label>
+                <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="h-12 bg-secondary/20 rounded-xl" />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Status</Label>
+                  <Select value={formData.status} onValueChange={(v: MemberStatus) => setFormData({ ...formData, status: v })}>
+                    <SelectTrigger className="h-12 bg-secondary/20 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Role</Label>
+                  <Input value={formData.role} disabled className="h-12 bg-secondary/30 rounded-xl" />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-5 rounded-2xl bg-secondary/20 border border-border/50">
+                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black">
+                  <CheckCircle2 className="size-4" /> Ladder of Success
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {SOL_STAGES.map(stage => (
+                    <div key={stage} className="flex items-center space-x-3 cursor-pointer group" onClick={() => toggleSOL(stage)}>
+                      <Checkbox 
+                        id={stage} 
+                        checked={formData.ladderOfSuccess.includes(stage)} 
+                        onCheckedChange={() => toggleSOL(stage)} 
+                        className="h-5 w-5 rounded-md"
+                      />
+                      <Label htmlFor={stage} className="text-xs font-semibold cursor-pointer select-none group-hover:text-foreground transition-colors">{stage}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Role</Label>
-                <Input value={formData.role} disabled className="bg-secondary/30" />
+                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black">
+                  <ClipboardList className="size-4" /> Active Goals
+                </Label>
+                <Input 
+                  value={formData.targetToDo} 
+                  onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
+                  placeholder="e.g. Finish Module 1, Invite a friend" 
+                  className="h-12 bg-secondary/20 rounded-xl"
+                />
               </div>
-            </div>
 
-            <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border">
-              <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
-                <CheckCircle2 className="size-4" /> Ladder of Success
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                {SOL_STAGES.map(stage => (
-                  <div key={stage} className="flex items-center space-x-2">
-                    <Checkbox id={stage} checked={formData.ladderOfSuccess.includes(stage)} onCheckedChange={() => toggleSOL(stage)} />
-                    <Label htmlFor={stage} className="text-xs font-medium cursor-pointer">{stage}</Label>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black">
+                  <StickyNote className="size-4" /> Progress Notes
+                </Label>
+                <Textarea 
+                  value={formData.remarks} 
+                  onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
+                  className="min-h-[100px] bg-secondary/20 rounded-xl resize-none p-4"
+                  placeholder="Add follow-up notes or growth milestones..."
+                />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
-                <ClipboardList className="size-4" /> Active Goals
-              </Label>
-              <Input 
-                value={formData.targetToDo} 
-                onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-                placeholder="e.g. Finish First Step, Invite a friend" 
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-accent uppercase tracking-wider text-[10px] font-bold">
-                <StickyNote className="size-4" /> Notes
-              </Label>
-              <Textarea 
-                value={formData.remarks} 
-                onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-                className="min-h-[100px]"
-              />
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditingMember(null)}>Cancel</Button>
-            <Button onClick={handleUpdateMember}>Save Changes</Button>
+          <DialogFooter className="p-6 pt-2 bg-secondary/10 border-t flex flex-row gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => setEditingMember(null)}>Cancel</Button>
+            <Button className="flex-1" onClick={handleUpdateMember}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -330,16 +336,16 @@ export function AdminDashboard() {
 
 function StatCard({ title, value, label, icon: Icon }: any) {
   return (
-    <Card className="glass-card transition-all hover:border-accent/30">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{title}</CardTitle>
-        <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center border border-border">
-          <Icon className="h-4 w-4 text-accent" />
+    <Card className="glass-card transition-all hover:border-accent/30 w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-4 sm:p-6">
+        <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{title}</CardTitle>
+        <div className="h-9 w-9 rounded-xl bg-secondary flex items-center justify-center border border-border">
+          <Icon className="h-4.5 w-4.5 text-accent" />
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-black tracking-tight">{value}</div>
-        <p className="text-[10px] text-muted-foreground mt-1 font-medium">{label}</p>
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <div className="text-3xl font-black tracking-tighter">{value}</div>
+        <p className="text-[10px] text-muted-foreground mt-1 font-medium uppercase tracking-tight">{label}</p>
       </CardContent>
     </Card>
   );
