@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 const chartData = [
   { name: 'Jan', users: 400, cells: 24 },
@@ -28,13 +29,19 @@ const chartData = [
 ];
 
 export function AdminDashboard() {
+  const { user } = useAuth();
   const db = useFirestore();
   
+  // Guard queries to only run if user is admin
   const membersQuery = useMemoFirebase(() => {
+    if (!user || user.role !== 'Admin') return null;
     return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(5));
-  }, [db]);
+  }, [db, user]);
 
-  const allMembersQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
+  const allMembersQuery = useMemoFirebase(() => {
+    if (!user || user.role !== 'Admin') return null;
+    return collection(db, 'users');
+  }, [db, user]);
 
   const { data: recentMembers, loading: loadingRecent } = useCollection(membersQuery);
   const { data: allMembers, loading: loadingAll } = useCollection(allMembersQuery);

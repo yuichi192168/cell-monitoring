@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert, Lock } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import { 
   Dialog, 
   DialogContent, 
@@ -36,14 +37,17 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function MemberManagement() {
   const { user: currentUser } = useAuth();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('Member');
   const db = useFirestore();
 
+  // Guard the query to only run if the user is authorized
   const membersQuery = useMemoFirebase(() => {
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Leader')) return null;
     return query(collection(db, 'users'), orderBy('name', 'asc'));
-  }, [db]);
+  }, [db, currentUser]);
 
   const { data: members, loading } = useCollection(membersQuery);
 
@@ -82,6 +86,26 @@ export default function MemberManagement() {
         errorEmitter.emit('permission-error', permissionError);
       });
   };
+
+  // UI Guard for Members attempting to access this page
+  if (currentUser?.role === 'Member') {
+    return (
+      <LayoutShell>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 animate-in fade-in duration-500">
+          <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center">
+            <Lock className="size-8 text-destructive" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-headline font-bold">Access Restricted</h2>
+            <p className="text-muted-foreground max-w-sm">
+              You do not have the required security clearance to view the strategic member registry.
+            </p>
+          </div>
+          <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
+        </div>
+      </LayoutShell>
+    );
+  }
 
   return (
     <LayoutShell>

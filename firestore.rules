@@ -9,7 +9,9 @@ service cloud.firestore {
 
     // Helper: check if the user has a specific role
     function hasRole(role) {
-      return request.auth != null && getCurrentUser().role == role;
+      // Added null check for robustness
+      let user = getCurrentUser();
+      return request.auth != null && user != null && user.role == role;
     }
 
     function isAdmin() {
