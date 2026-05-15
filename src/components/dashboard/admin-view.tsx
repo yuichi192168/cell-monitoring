@@ -51,7 +51,6 @@ export function AdminDashboard() {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Edit State
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
   const [formData, setFormData] = useState({
@@ -64,7 +63,6 @@ export function AdminDashboard() {
   });
 
   const allUsersQuery = useMemoFirebase(() => {
-    // GUARD: Only issue query if user is fully loaded and has correct role
     if (!currentUser || currentUser.role !== 'Admin') return null;
     return query(collection(db, 'users'));
   }, [db, currentUser?.id, currentUser?.role]);
@@ -73,7 +71,6 @@ export function AdminDashboard() {
 
   const loading = authLoading || dataLoading;
 
-  // Client-side sorting and filtering
   const allUsersSorted = React.useMemo(() => {
     return (allUsersRaw || []).sort((a: any, b: any) => 
       (a.name || '').localeCompare(b.name || '')
@@ -90,7 +87,6 @@ export function AdminDashboard() {
   };
 
   const handleEditClick = (member: any) => {
-    setEditingMember(member);
     setFormData({
       name: member.name || '',
       status: member.status || 'Active',
@@ -99,6 +95,7 @@ export function AdminDashboard() {
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || ''
     });
+    setEditingMember(member);
   };
 
   const handleUpdateMember = () => {
@@ -154,13 +151,13 @@ export function AdminDashboard() {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-20 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-headline font-bold">Community Overview</h1>
-          <p className="text-sm text-muted-foreground">Monitoring all groups and progress across the network.</p>
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold">Overview</h1>
+          <p className="text-sm text-muted-foreground">Monitoring all groups and progress.</p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input 
-            placeholder="Search members..." 
+            placeholder="Search..." 
             className="pl-9 bg-secondary/20 h-11 rounded-xl"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -169,9 +166,9 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Total Network" value={stats.totalUsers.toString()} label="Total individuals" icon={Users} />
-        <StatCard title="Active Progress" value={stats.activeMembers.toString()} label="Currently active" icon={UserCheck} />
-        <StatCard title="Group Leaders" value={stats.leadersCount.toString()} label="Assigned leaders" icon={Activity} />
+        <StatCard title="Total" value={stats.totalUsers.toString()} label="Total users" icon={Users} />
+        <StatCard title="Active" value={stats.activeMembers.toString()} label="Active progress" icon={UserCheck} />
+        <StatCard title="Leaders" value={stats.leadersCount.toString()} label="Cell leaders" icon={Activity} />
       </div>
 
       <div className="space-y-8">
@@ -283,13 +280,12 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] overflow-y-auto max-h-[90vh] p-0 border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium">Update progress and growth notes for {editingMember?.name}.</DialogDescription>
+              <DialogDescription className="text-muted-foreground font-medium">Update progress for {editingMember?.name}.</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-6">
@@ -366,7 +362,7 @@ export function AdminDashboard() {
                   value={formData.remarks} 
                   onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
                   className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 focus-visible:ring-1 focus-visible:ring-accent/50 transition-all"
-                  placeholder="Add follow-up notes or growth milestones..."
+                  placeholder="Add follow-up notes..."
                 />
               </div>
             </div>
@@ -379,7 +375,6 @@ export function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Alert */}
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
         <AlertDialogContent className="rounded-[2rem] border-white/10">
           <AlertDialogHeader>

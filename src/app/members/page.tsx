@@ -74,12 +74,10 @@ export default function MemberRegistry() {
     const usersRef = collection(db, 'users');
     
     if (currentUser.role === 'Admin') {
-      // Remove orderBy from query to avoid index requirements
       return query(usersRef);
     }
     
     if (currentUser.role === 'Leader') {
-      // Remove orderBy from query to avoid index requirements
       return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
     }
     
@@ -88,13 +86,11 @@ export default function MemberRegistry() {
 
   const { data: membersRaw, loading } = useCollection(membersQuery);
 
-  // Sort and filter members on the client side
   const filteredMembers = (membersRaw || [])
     .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   const openEditModal = (member: any) => {
-    setEditingMember(member);
     setFormData({
       name: member.name || '',
       status: member.status || 'Active',
@@ -103,6 +99,7 @@ export default function MemberRegistry() {
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || ''
     });
+    setEditingMember(member);
   };
 
   const handleUpdateMember = () => {
@@ -115,6 +112,8 @@ export default function MemberRegistry() {
     };
 
     const userRef = doc(db, 'users', editingMember.id);
+    
+    // Initiate mutation immediately
     updateDoc(userRef, updatePayload)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -125,6 +124,7 @@ export default function MemberRegistry() {
         errorEmitter.emit('permission-error', permissionError);
       });
     
+    // Close dialog immediately to prevent UI locking
     setEditingMember(null);
   };
 
@@ -254,7 +254,6 @@ export default function MemberRegistry() {
             </div>
           </CardHeader>
           <CardContent className="px-0 sm:px-8">
-            {/* Desktop Table with Horizontal Scroll Area */}
             <div className="hidden sm:block">
               <ScrollArea className="w-full">
                 <div className="min-w-[800px] w-full pb-4">
@@ -316,7 +315,6 @@ export default function MemberRegistry() {
               </ScrollArea>
             </div>
 
-            {/* Mobile Card View */}
             <div className="sm:hidden px-4 space-y-4 pb-8">
               {loading ? (
                 <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading members...</div>
@@ -377,13 +375,12 @@ export default function MemberRegistry() {
         </Card>
       </div>
 
-      {/* Enrollment and Edit Dialogs */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Add Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Enroll a new person and track their spiritual growth.</DialogDescription>
+              <DialogDescription className="font-medium text-muted-foreground">Enroll a new person and track their growth.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           </div>
@@ -399,7 +396,7 @@ export default function MemberRegistry() {
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Update the progress and targets for {editingMember?.name}.</DialogDescription>
+              <DialogDescription className="font-medium text-muted-foreground">Update progress and targets.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           </div>
@@ -410,7 +407,6 @@ export default function MemberRegistry() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Alert */}
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
         <AlertDialogContent className="rounded-[2rem] border-white/10">
           <AlertDialogHeader>
@@ -532,7 +528,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-black p-3 pb-2.5">Member Actions</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-black p-3 pb-2.5">Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
           <Edit className="size-5" /> 
           <span className="font-bold">Edit</span>
@@ -542,12 +538,12 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         
         {isAdmin && (
           <>
-            <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black p-3 pb-1.5">System Roles</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black p-3 pb-1.5">Roles</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
-              <User className="size-5" /> Cell Member
+              <User className="size-5" /> Member
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Leader')} className="gap-3 p-4 rounded-xl cursor-pointer text-accent hover:bg-secondary transition-all">
-              <ShieldCheck className="size-5" /> Cell Leader
+              <ShieldCheck className="size-5" /> Leader
             </DropdownMenuItem>
             <DropdownMenuSeparator className="mx-2 opacity-50" />
           </>
