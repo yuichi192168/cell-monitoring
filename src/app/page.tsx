@@ -11,6 +11,7 @@ import { Shield, Users, Target, LogIn, UserPlus, Mail, Lock, User as UserIcon } 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { getFriendlyErrorMessage } from '@/lib/utils';
 
 export default function AuthPage() {
   const { login, register, user, isLoading } = useAuth();
@@ -38,7 +39,7 @@ export default function AuthPage() {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: getFriendlyErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);
@@ -54,7 +55,7 @@ export default function AuthPage() {
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "Could not create account. Please try again.",
+        description: getFriendlyErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);

@@ -22,6 +22,7 @@ import {
   DialogDescription, 
   DialogFooter 
 } from '@/components/ui/dialog';
+import { getFriendlyErrorMessage } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user: authUser } = useAuth();
@@ -64,7 +65,7 @@ export default function SettingsPage() {
       toast({
         variant: "destructive",
         title: "Update Failed",
-        description: error.message || "Could not update profile.",
+        description: getFriendlyErrorMessage(error),
       });
     } finally {
       setIsUpdating(false);
@@ -92,7 +93,8 @@ export default function SettingsPage() {
 
     setIsChangingPassword(true);
     try {
-      const user = (await import('@/firebase')).initializeFirebase().auth.currentUser;
+      const { auth } = (await import('@/firebase')).initializeFirebase();
+      const user = auth.currentUser;
       if (!user || !user.email) throw new Error("No authenticated user found.");
 
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
@@ -111,7 +113,7 @@ export default function SettingsPage() {
       toast({
         variant: "destructive",
         title: "Change Failed",
-        description: error.message || "Could not change password. Check your current password.",
+        description: getFriendlyErrorMessage(error),
       });
     } finally {
       setIsChangingPassword(false);
