@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,7 +22,7 @@ const navigation = [
     title: "Dashboard",
     icon: LayoutDashboard,
     url: "/dashboard",
-    roles: ["Admin", "Leader", "Member"],
+    roles: ["Admin", "Leader"],
   },
   {
     title: "Member Registry",

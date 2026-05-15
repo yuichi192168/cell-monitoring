@@ -20,7 +20,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('Member');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('Leader');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
@@ -104,7 +104,7 @@ export default function AuthPage() {
             <Card className="glass-card border-white/5 rounded-2xl sm:rounded-3xl overflow-hidden">
               <form onSubmit={handleLogin}>
                 <CardHeader className="space-y-1 p-6 sm:p-8">
-                  <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+                  <CardTitle className="text-2xl font-bold">Monitor Login</CardTitle>
                   <CardDescription className="text-sm">Access the tactical monitoring dashboard.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
@@ -155,8 +155,8 @@ export default function AuthPage() {
             <Card className="glass-card border-white/5 rounded-2xl sm:rounded-3xl overflow-hidden">
               <form onSubmit={handleRegister}>
                 <CardHeader className="space-y-1 p-6 sm:p-8">
-                  <CardTitle className="text-2xl font-bold">System Enrollment</CardTitle>
-                  <CardDescription className="text-sm">Initialize new member identity.</CardDescription>
+                  <CardTitle className="text-2xl font-bold">Monitor Enrollment</CardTitle>
+                  <CardDescription className="text-sm">Initialize new monitor identity.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
                   <div className="space-y-2">
@@ -205,23 +205,15 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-3 pt-2">
-                    <Label className="text-xs uppercase tracking-widest font-black">Initial Clearance Level</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button 
-                        type="button"
-                        variant={selectedRole === 'Member' ? 'default' : 'outline'} 
-                        className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
-                        onClick={() => setSelectedRole('Member')}
-                      >
-                        Member
-                      </Button>
+                    <Label className="text-xs uppercase tracking-widest font-black">Strategic Clearance Level</Label>
+                    <div className="grid grid-cols-2 gap-2">
                       <Button 
                         type="button"
                         variant={selectedRole === 'Leader' ? 'default' : 'outline'} 
                         className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
                         onClick={() => setSelectedRole('Leader')}
                       >
-                        Leader
+                        Cell Leader
                       </Button>
                       <Button 
                         type="button"
@@ -229,7 +221,7 @@ export default function AuthPage() {
                         className="h-10 text-[9px] sm:text-[10px] uppercase font-black rounded-lg"
                         onClick={() => setSelectedRole('Admin')}
                       >
-                        Admin
+                        Global Admin
                       </Button>
                     </div>
                   </div>
@@ -239,7 +231,7 @@ export default function AuthPage() {
                     {isSubmitting ? "Enrolling..." : "INITIATE SESSION"}
                   </Button>
                   <p className="text-[10px] text-muted-foreground text-center italic">
-                    By enrolling, you accept strategic operational protocols.
+                    Access is restricted to authorized tactical monitors.
                   </p>
                 </CardFooter>
               </form>
