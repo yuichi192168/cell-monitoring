@@ -131,7 +131,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-20 sm:pb-10">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-20 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-headline font-bold">Community Overview</h1>
@@ -159,7 +159,7 @@ export function AdminDashboard() {
         
         <Accordion type="multiple" className="space-y-4">
           {leaders.map(leader => {
-            const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && m.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === ''));
             
             return (
               <AccordionItem key={leader.id} value={leader.id} className="border-none">
@@ -245,7 +245,7 @@ export function AdminDashboard() {
                           </TableBody>
                         </Table>
                       </div>
-                      <ScrollBar orientation="horizontal" className="h-2" />
+                      <ScrollBar orientation="horizontal" className="h-2 bg-secondary/20" />
                     </ScrollArea>
                   </AccordionContent>
                 </Card>

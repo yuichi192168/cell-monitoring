@@ -77,7 +77,7 @@ export default function MemberRegistry() {
   const { data: members, loading } = useCollection(membersQuery);
 
   const filteredMembers = (members || [])
-    .filter((m: any) => m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
   const openEditModal = (member: any) => {
@@ -242,7 +242,7 @@ export default function MemberRegistry() {
             {/* Desktop Table with Horizontal Scroll Area */}
             <div className="hidden sm:block">
               <ScrollArea className="w-full">
-                <div className="min-w-[800px]">
+                <div className="min-w-[800px] w-full pb-4">
                   <Table>
                     <TableHeader className="bg-secondary/30">
                       <TableRow className="hover:bg-transparent border-white/5">
@@ -297,7 +297,7 @@ export default function MemberRegistry() {
                     </TableBody>
                   </Table>
                 </div>
-                <ScrollBar orientation="horizontal" className="h-2" />
+                <ScrollBar orientation="horizontal" className="h-2 bg-secondary/20" />
               </ScrollArea>
             </div>
 
@@ -449,9 +449,10 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
               <Checkbox 
                 id={stage} 
                 checked={formData.ladderOfSuccess.includes(stage)} 
-                className="h-5 w-5 rounded-md border-muted-foreground/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent pointer-events-none"
+                onCheckedChange={() => toggleSOL(stage)}
+                className="h-5 w-5 rounded-md border-muted-foreground/50 data-[state=checked]:bg-accent data-[state=checked]:border-accent"
               />
-              <Label htmlFor={stage} className="text-xs font-bold cursor-pointer select-none pointer-events-none uppercase tracking-tighter">{stage}</Label>
+              <Label htmlFor={stage} className="text-xs font-bold cursor-pointer select-none uppercase tracking-tighter">{stage}</Label>
             </div>
           ))}
         </div>
