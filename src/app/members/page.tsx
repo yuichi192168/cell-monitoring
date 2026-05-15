@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, ShieldAlert } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu, 
@@ -20,9 +20,25 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserRole } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function MemberManagement() {
+  const { user: currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [newRole, setNewRole] = useState<UserRole>('Member');
   const db = useFirestore();
 
   const membersQuery = useMemoFirebase(() => {
@@ -36,6 +52,37 @@ export default function MemberManagement() {
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleUpdateRole = () => {
+    if (!editingMember) return;
+    
+    const userRef = doc(db, 'users', editingMember.id);
+    updateDoc(userRef, { role: newRole })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { role: newRole }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+    
+    setEditingMember(null);
+  };
+
+  const handleDeleteMember = (memberId: string) => {
+    if (!confirm("Are you sure you want to remove this member? This action is irreversible.")) return;
+    
+    const userRef = doc(db, 'users', memberId);
+    deleteDoc(userRef)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'delete'
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
   return (
     <LayoutShell>
       <div className="space-y-8 animate-in fade-in duration-500">
@@ -44,10 +91,12 @@ export default function MemberManagement() {
             <h1 className="text-3xl font-headline font-bold tracking-tight">Member Registry</h1>
             <p className="text-muted-foreground">Search, filter, and manage all system member records.</p>
           </div>
-          <Button className="gap-2">
-            <Plus className="size-4" />
-            Add New Member
-          </Button>
+          {currentUser?.role === 'Admin' && (
+            <Button className="gap-2">
+              <Plus className="size-4" />
+              Add New Member
+            </Button>
+          )}
         </div>
 
         <Card className="glass-card">
@@ -129,14 +178,36 @@ export default function MemberManagement() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="gap-2">
-                                <Edit className="size-4" />
-                                Edit Record
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-destructive">
-                                <Trash2 className="size-4" />
-                                Delete Member
-                              </DropdownMenuItem>
+                              {currentUser?.role === 'Admin' && (
+                                <>
+                                  <DropdownMenuItem 
+                                    className="gap-2"
+                                    onClick={() => {
+                                      setEditingMember(member);
+                                      setNewRole(member.role);
+                                    }}
+                                  >
+                                    <ShieldAlert className="size-4" />
+                                    Change Role
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="gap-2">
+                                    <Edit className="size-4" />
+                                    Edit Record
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="gap-2 text-destructive"
+                                    onClick={() => handleDeleteMember(member.id)}
+                                  >
+                                    <Trash2 className="size-4" />
+                                    Delete Member
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {currentUser?.role !== 'Admin' && (
+                                <DropdownMenuItem disabled className="text-xs italic text-muted-foreground">
+                                  Insufficient Clearance
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -155,6 +226,33 @@ export default function MemberManagement() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Security Clearance</DialogTitle>
+            <DialogDescription>
+              Modify the role for {editingMember?.name}. This impacts system-wide permissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={newRole} onValueChange={(value: UserRole) => setNewRole(value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Member">Member</SelectItem>
+                <SelectItem value="Leader">Leader</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMember(null)}>Cancel</Button>
+            <Button onClick={handleUpdateRole}>Confirm Change</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </LayoutShell>
   );
 }

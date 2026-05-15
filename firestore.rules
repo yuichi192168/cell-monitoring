@@ -32,13 +32,17 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
 
       // Updating:
-      // 1. Users can update their own record.
-      // 2. Admins can update any record.
-      // 3. Leaders can update records of members assigned to them.
+      // 1. Users can update their own record (except role).
+      // 2. Admins can update any record (including role).
+      // 3. Leaders can update records of members assigned to them (except role).
       allow update: if request.auth != null && (
         request.auth.uid == userId || 
         isAdmin() || 
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+      ) && (
+        // CRITICAL: Only Admins can change the 'role' field.
+        // If the role is being changed, the requester MUST be an Admin.
+        request.resource.data.role == resource.data.role || isAdmin()
       );
 
       // Deleting: Only Admins can remove user records.
