@@ -104,7 +104,7 @@ export function LeaderDashboard() {
 
                   <div className="pt-2">
                     <Button variant="ghost" size="sm" className="w-full justify-between text-[10px] sm:text-[11px] h-9 group/btn" onClick={() => router.push('/members')}>
-                      Edit Member Journey
+                      Edit
                       <ChevronRight className="size-3 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>
                   </div>

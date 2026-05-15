@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -505,7 +504,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-black p-3 pb-2.5">Member Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
           <Edit className="size-5" /> 
-          <span className="font-bold">Edit Journey</span>
+          <span className="font-bold">Edit</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator className="mx-2 opacity-50" />
@@ -527,7 +526,7 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         {(isAdmin || isLeader) && (
           <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
             <Trash2 className="size-5" /> 
-            <span className="font-bold">Delete Record</span>
+            <span className="font-bold">Delete</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

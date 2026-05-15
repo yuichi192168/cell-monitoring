@@ -232,11 +232,11 @@ export function AdminDashboard() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
                                       <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold">
-                                        <Edit className="size-4" /> Edit Journey
+                                        <Edit className="size-4" /> Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="mx-2 opacity-50" />
                                       <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
-                                        <Trash2 className="size-4" /> Delete Record
+                                        <Trash2 className="size-4" /> Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
