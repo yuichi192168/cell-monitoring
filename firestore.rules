@@ -38,7 +38,10 @@ service cloud.firestore {
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      allow delete: if isAdmin();
+      allow delete: if request.auth != null && (
+        isAdmin() || 
+        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+      );
     }
   }
 }

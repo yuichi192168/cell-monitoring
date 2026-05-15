@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -491,6 +492,8 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
 
 function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: any) {
   const isAdmin = currentUser?.role === 'Admin';
+  const isLeader = currentUser?.role === 'Leader';
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -505,9 +508,10 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
           <span className="font-bold">Edit Journey</span>
         </DropdownMenuItem>
         
+        <DropdownMenuSeparator className="mx-2 opacity-50" />
+        
         {isAdmin && (
           <>
-            <DropdownMenuSeparator className="mx-2 opacity-50" />
             <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/60 font-black p-3 pb-1.5">System Roles</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
               <User className="size-5" /> Cell Member
@@ -516,11 +520,15 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
               <ShieldCheck className="size-5" /> Cell Leader
             </DropdownMenuItem>
             <DropdownMenuSeparator className="mx-2 opacity-50" />
-            <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
-              <Trash2 className="size-5" /> 
-              <span className="font-bold">Delete Record</span>
-            </DropdownMenuItem>
           </>
+        )}
+
+        {/* Both Admins and Leaders can delete members assigned to them */}
+        {(isAdmin || isLeader) && (
+          <DropdownMenuItem onClick={() => onDelete(member.id)} className="gap-3 p-4 rounded-xl cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
+            <Trash2 className="size-5" /> 
+            <span className="font-bold">Delete Record</span>
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
