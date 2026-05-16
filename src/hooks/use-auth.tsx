@@ -7,7 +7,7 @@ import {
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 import { User, UserRole } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -29,37 +29,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Attempt to fetch profile. Firestore persistence handles offline access automatically.
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
+    let unsubscribeDoc: (() => void) | undefined;
 
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Use onSnapshot for the user doc to handle offline access immediately
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
             setUser({
               id: firebaseUser.uid,
               name: userData.name || 'User',
               email: firebaseUser.email || '',
               role: userData.role || 'Member',
             });
-          } else {
-            // Fallback for cases where auth exists but doc doesn't (rare)
-            setUser(null);
           }
-        } catch (error) {
-          console.warn("Auth profile fetch failed (likely offline). User session retained.");
-          // If offline, we can't get the latest role/name if not cached, 
-          // but we keep the session active to avoid a hard logout.
-        }
+          setIsLoading(false);
+        }, (error) => {
+          console.warn("Auth profile listener error (transient if offline):", error);
+          // Don't set loading to false here, as we might be waiting for cache
+        });
       } else {
         setUser(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, [auth, db]);
 
   const login = async (email: string, password: string) => {
@@ -91,8 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       
-      // We don't await the setDoc so the UI can proceed immediately (Firestore queues it)
-      const { setDoc } = await import('firebase/firestore');
+      // Queued for sync
       setDoc(userDocRef, newUser);
       
       setUser({

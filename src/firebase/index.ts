@@ -17,17 +17,16 @@ let authInstance: Auth | null = null;
 export function initializeFirebase() {
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   
-  // Use a singleton pattern to avoid multiple initializations of Firestore with cache
   if (!firestoreInstance) {
     try {
-      // Initialize with multi-tab persistence as per documentation
+      // Use multi-tab IndexedDb persistence as per latest docs
       firestoreInstance = initializeFirestore(app, {
         localCache: persistentLocalCache({ 
           tabManager: persistentMultipleTabManager() 
         })
       });
     } catch (e) {
-      // If already initialized (e.g. during hot reload), fallback to getFirestore
+      // Fallback to existing instance if already initialized
       firestoreInstance = getFirestore(app);
     }
   }

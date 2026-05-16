@@ -22,27 +22,27 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     setError(null);
 
+    // Metadata changes enabled to track cache vs server source
     const unsubscribe = onSnapshot(
       query,
+      { includeMetadataChanges: true },
       (snapshot: QuerySnapshot<T>) => {
         const docs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         setData(docs as any);
         setLoading(false);
       },
       (err) => {
-        // Handle common Firestore errors without crashing the UI
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: (query as any)._query?.path?.toString() || 'unknown',
             operation: 'list',
           });
           setError(permissionError);
-          console.warn("Firestore Permission Denied:", err.message);
         } else if (err.code === 'unavailable') {
-          // This is expected when offline. Persistence handles it, so we just log it.
-          console.log("Firestore temporarily unavailable (likely offline). Using cached data.");
+          // Expected behavior when offline, handled by persistence
+          console.log("Firestore temporarily offline. Using cached snapshot.");
         } else {
-          console.error("Firestore error:", err);
+          console.error("Firestore useCollection error:", err);
           setError(err);
         }
         setLoading(false);
