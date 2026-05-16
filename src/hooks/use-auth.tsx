@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import {
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 import { User, UserRole } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -32,19 +31,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
+        try {
+          // Attempt to fetch profile. Firestore persistence handles offline access automatically.
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            id: firebaseUser.uid,
-            name: userData.name || 'User',
-            email: firebaseUser.email || '',
-            role: userData.role || 'Member',
-          });
-        } else {
-          setUser(null);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              id: firebaseUser.uid,
+              name: userData.name || 'User',
+              email: firebaseUser.email || '',
+              role: userData.role || 'Member',
+            });
+          } else {
+            // Fallback for cases where auth exists but doc doesn't (rare)
+            setUser(null);
+          }
+        } catch (error) {
+          console.warn("Auth profile fetch failed (likely offline). User session retained.");
+          // If offline, we can't get the latest role/name if not cached, 
+          // but we keep the session active to avoid a hard logout.
         }
       } else {
         setUser(null);
@@ -84,8 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       
-      // Await setDoc to ensure the document exists before the UI tries to query roles
-      await setDoc(userDocRef, newUser);
+      // We don't await the setDoc so the UI can proceed immediately (Firestore queues it)
+      const { setDoc } = await import('firebase/firestore');
+      setDoc(userDocRef, newUser);
       
       setUser({
         id: firebaseUser.uid,

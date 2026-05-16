@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,6 @@ import {
   DocumentSnapshot, 
   DocumentData 
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
@@ -37,9 +35,11 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
             operation: 'get',
           });
           setError(permissionError);
-          console.warn("Firestore Permission Denied (Get):", err.message);
+          console.warn("Firestore Permission Denied:", err.message);
+        } else if (err.code === 'unavailable') {
+          console.log("Document temporarily unavailable (likely offline). Using cached data.");
         } else {
-          console.error("Firestore useDoc error:", err);
+          console.error("Firestore error:", err);
           setError(err);
         }
         setLoading(false);

@@ -5,22 +5,36 @@ import {
   getFirestore, 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager 
+  persistentMultipleTabManager,
+  Firestore
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
+
+let firestoreInstance: Firestore | null = null;
+let authInstance: Auth | null = null;
 
 export function initializeFirebase() {
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   
-  // Enable Offline Persistence with multi-tab support
-  const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-  });
+  // Use a singleton pattern to avoid multiple initializations of Firestore with cache
+  if (!firestoreInstance) {
+    try {
+      // Try to initialize with persistence
+      firestoreInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (e) {
+      // If already initialized, fallback to getFirestore
+      firestoreInstance = getFirestore(app);
+    }
+  }
+
+  if (!authInstance) {
+    authInstance = getAuth(app);
+  }
   
-  const auth = getAuth(app);
-  
-  return { app, db, auth };
+  return { app, db: firestoreInstance, auth: authInstance };
 }
 
 export * from './provider';
