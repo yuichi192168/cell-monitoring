@@ -1,36 +1,34 @@
-const CACHE_NAME = 'cgt-pwa-cache-v1';
-const STATIC_ASSETS = [
+const CACHE_NAME = 'cgt-cache-v2';
+const OFFLINE_URL = '/';
+
+const ASSETS_TO_CACHE = [
   '/',
   '/dashboard',
   '/members',
   '/settings',
   '/globals.css',
   '/site.webmanifest',
-  '/favicon-32x32.png',
-  '/favicon-16x16.png',
-  '/apple-touch-icon.png'
+  '/favicon.ico'
 ];
 
-// Install Event - Caching App Shell
+// Install event - cache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching App Shell');
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(ASSETS_TO_CACHE);
     })
   );
   self.skipWaiting();
 });
 
-// Activate Event - Cleaning up old caches
+// Activate event - cleanup old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Clearing old cache');
-            return caches.delete(cache);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
@@ -39,22 +37,35 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event - Stale-While-Revalidate Strategy
+// Fetch event - Stale-While-Revalidate strategy
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
+  // Skip Firebase/Google API calls (Firestore handles its own persistence)
+  if (event.request.url.includes('firestore.googleapis.com') || 
+      event.request.url.includes('identitytoolkit.googleapis.com')) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
         // Cache the new response
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-        });
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
         return networkResponse;
+      }).catch(() => {
+        // If network fails and no cache, return offline fallback if it's a navigation
+        if (event.request.mode === 'navigate') {
+          return caches.match(OFFLINE_URL);
+        }
       });
 
-      // Return cached response immediately if available, or wait for network
       return cachedResponse || fetchPromise;
     })
   );

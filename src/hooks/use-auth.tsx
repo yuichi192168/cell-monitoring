@@ -7,7 +7,7 @@ import {
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 import { User, UserRole } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -18,6 +18,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  isInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const db = useFirestore();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     let unsubscribeDoc: (() => void) | undefined;
@@ -46,14 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
           }
           setIsLoading(false);
+          setIsInitialized(true);
         }, (error) => {
-          console.warn("Auth profile listener error (transient if offline):", error);
-          // Ensure we don't hang in loading state if snapshot fails
+          console.warn("Auth profile listener error (expected if doc not in cache yet):", error);
           setIsLoading(false);
+          setIsInitialized(true);
         });
       } else {
         setUser(null);
         setIsLoading(false);
+        setIsInitialized(true);
       }
     });
 
@@ -93,7 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       // Queued for sync automatically by Firestore persistence
-      setDoc(userDocRef, newUser);
+      const { setDoc } = await import('firebase/firestore');
+      await setDoc(userDocRef, newUser);
       
       setUser({
         id: firebaseUser.uid,
@@ -117,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading, isInitialized }}>
       {children}
     </AuthContext.Provider>
   );

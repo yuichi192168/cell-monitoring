@@ -17,15 +17,16 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, isInitialized } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Optimized auth guard: Only redirect if fully initialized and no user is found
   React.useEffect(() => {
-    if (!isLoading && !user) {
+    if (isInitialized && !user && !isLoading) {
       router.push('/');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isInitialized, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -38,13 +39,20 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return 'Cell Member';
   };
 
-  if (isLoading || !user) {
+  // Improved loading state: Don't show a blocker if we're just restoring session offline
+  if (!isInitialized || (isLoading && !user)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Restoring Session...</p>
+        </div>
       </div>
     );
   }
+
+  // If we're on the login page, don't wrap in shell
+  if (pathname === '/') return <>{children}</>;
 
   const navigation = [
     {
@@ -104,8 +112,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-secondary/50 h-auto sm:gap-3 rounded-2xl p-1.5">
                   <div className="text-sm text-right hidden sm:block">
-                    <p className="font-black leading-none">{user.name}</p>
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold mt-1">{getRoleDisplay(user.role)}</p>
+                    <p className="font-black leading-none">{user?.name || 'User'}</p>
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold mt-1">{user ? getRoleDisplay(user.role) : 'Offline'}</p>
                   </div>
                   <div className="h-10 w-10 rounded-full bg-secondary border border-white/5 flex items-center justify-center relative shadow-inner overflow-hidden">
                     <User className="size-5 text-muted-foreground" />
@@ -116,8 +124,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] p-2.5 border-white/10 shadow-2xl">
                 <DropdownMenuLabel className="p-3">
                   <div className="flex flex-col space-y-1">
-                    <p className="font-black leading-none">{user.name}</p>
-                    <p className="text-[10px] leading-none text-muted-foreground uppercase tracking-widest font-bold mt-1">{getRoleDisplay(user.role)}</p>
+                    <p className="font-black leading-none">{user?.name || 'User'}</p>
+                    <p className="text-[10px] leading-none text-muted-foreground uppercase tracking-widest font-bold mt-1">{user ? getRoleDisplay(user.role) : 'Offline Mode'}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="mx-2 opacity-50" />
