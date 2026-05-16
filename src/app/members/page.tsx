@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { LayoutShell } from '@/components/layout-shell';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -86,9 +87,22 @@ export default function MemberRegistry() {
 
   const { data: membersRaw, loading } = useCollection(membersQuery);
 
-  const filteredMembers = (membersRaw || [])
-    .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const filteredMembers = React.useMemo(() => {
+    return (membersRaw || [])
+      .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [membersRaw, searchTerm]);
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      name: '',
+      status: 'Active',
+      role: 'Member',
+      ladderOfSuccess: [],
+      targetToDo: '',
+      remarks: ''
+    });
+  }, []);
 
   const openEditModal = (member: any) => {
     setFormData({
@@ -113,7 +127,6 @@ export default function MemberRegistry() {
 
     const userRef = doc(db, 'users', editingMember.id);
     
-    // Initiate mutation immediately
     updateDoc(userRef, updatePayload)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -124,8 +137,8 @@ export default function MemberRegistry() {
         errorEmitter.emit('permission-error', permissionError);
       });
     
-    // Close dialog immediately to prevent UI locking
     setEditingMember(null);
+    resetForm();
   };
 
   const handleAddMember = async (e: React.FormEvent) => {
@@ -153,17 +166,6 @@ export default function MemberRegistry() {
 
     setIsAddDialogOpen(false);
     resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      status: 'Active',
-      role: 'Member',
-      ladderOfSuccess: [],
-      targetToDo: '',
-      remarks: ''
-    });
   };
 
   const confirmDelete = () => {
@@ -375,7 +377,7 @@ export default function MemberRegistry() {
         </Card>
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if(!open) resetForm(); }}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
@@ -391,7 +393,7 @@ export default function MemberRegistry() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+      <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) { setEditingMember(null); resetForm(); } }}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">

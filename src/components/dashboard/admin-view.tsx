@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -71,20 +72,20 @@ export function AdminDashboard() {
 
   const loading = authLoading || dataLoading;
 
-  const allUsersSorted = React.useMemo(() => {
+  const allUsersSorted = useMemo(() => {
     return (allUsersRaw || []).sort((a: any, b: any) => 
       (a.name || '').localeCompare(b.name || '')
     );
   }, [allUsersRaw]);
 
-  const leaders = allUsersSorted.filter(u => u.role === 'Leader');
-  const members = allUsersSorted.filter(u => u.role === 'Member');
+  const leaders = useMemo(() => allUsersSorted.filter(u => u.role === 'Leader'), [allUsersSorted]);
+  const members = useMemo(() => allUsersSorted.filter(u => u.role === 'Member'), [allUsersSorted]);
 
-  const stats = {
+  const stats = useMemo(() => ({
     totalUsers: allUsersSorted.length || 0,
     activeMembers: allUsersSorted.filter(m => m.status === 'Active').length,
     leadersCount: leaders.length,
-  };
+  }), [allUsersSorted, leaders]);
 
   const handleEditClick = (member: any) => {
     setFormData({
