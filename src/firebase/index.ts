@@ -1,14 +1,25 @@
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
 export function initializeFirebase() {
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const db = getFirestore(app);
+  
+  // Enable Offline Persistence with multi-tab support
+  const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+  
   const auth = getAuth(app);
+  
   return { app, db, auth };
 }
 

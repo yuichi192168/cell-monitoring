@@ -16,13 +16,13 @@
     --secondary-foreground: 210 20% 92%;
     --muted: 210 10% 15%;
     --muted-foreground: 210 10% 65%;
-    --accent: 188 10% 60%;
+    --accent: 210 10% 60%;
     --accent-foreground: 210 17% 8%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 20% 98%;
     --border: 210 10% 18%;
     --input: 210 10% 18%;
-    --ring: 188 10% 60%;
+    --ring: 210 10% 60%;
     --radius: 0.75rem;
     --sidebar-background: 210 17% 7%;
     --sidebar-foreground: 210 10% 75%;
@@ -31,13 +31,13 @@
     --sidebar-accent: 210 10% 15%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 210 10% 15%;
-    --sidebar-ring: 188 10% 60%;
+    --sidebar-ring: 210 10% 60%;
 
-    --chart-1: 188 10% 70%;
-    --chart-2: 188 10% 50%;
-    --chart-3: 188 10% 30%;
-    --chart-4: 188 10% 20%;
-    --chart-5: 188 10% 10%;
+    --chart-1: 210 10% 70%;
+    --chart-2: 210 10% 50%;
+    --chart-3: 210 10% 30%;
+    --chart-4: 210 10% 20%;
+    --chart-5: 210 10% 10%;
   }
 }
 
@@ -46,7 +46,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased selection:bg-accent selection:text-accent-foreground;
+    @apply bg-background text-foreground font-body antialiased selection:bg-accent selection:text-accent-foreground overflow-x-hidden;
+    /* PWA Safe Area Padding */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline tracking-tight;
@@ -79,4 +82,21 @@
   input, select, textarea {
     @apply text-base; /* Prevent auto-zoom on iOS */
   }
+}
+
+/* Hide standard scrollbars on mobile for app feel */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* PWA Splash Screen Animation */
+.pwa-fade-in {
+  animation: pwaFade 0.5s ease-out forwards;
+}
+
+@keyframes pwaFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
