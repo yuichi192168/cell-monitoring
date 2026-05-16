@@ -48,7 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }, (error) => {
           console.warn("Auth profile listener error (transient if offline):", error);
-          // Don't set loading to false here, as we might be waiting for cache
+          // Ensure we don't hang in loading state if snapshot fails
+          setIsLoading(false);
         });
       } else {
         setUser(null);
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       
-      // Queued for sync
+      // Queued for sync automatically by Firestore persistence
       setDoc(userDocRef, newUser);
       
       setUser({
