@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useCallback } from 'react';
@@ -59,6 +58,7 @@ export default function MemberRegistry() {
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -73,17 +73,9 @@ export default function MemberRegistry() {
 
   const membersQuery = useMemoFirebase(() => {
     if (!currentUser || !currentUser.id || !currentUser.role) return null;
-    
     const usersRef = collection(db, 'users');
-    
-    if (currentUser.role === 'Admin') {
-      return query(usersRef);
-    }
-    
-    if (currentUser.role === 'Leader') {
-      return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
-    }
-    
+    if (currentUser.role === 'Admin') return query(usersRef);
+    if (currentUser.role === 'Leader') return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
     return null;
   }, [db, currentUser?.id, currentUser?.role]);
 
@@ -104,6 +96,7 @@ export default function MemberRegistry() {
       targetToDo: '',
       remarks: ''
     });
+    setEditingMember(null);
   }, []);
 
   const openEditModal = (member: any) => {
@@ -118,8 +111,16 @@ export default function MemberRegistry() {
     setEditingMember(member);
   };
 
+  const unlockUI = () => {
+    setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+      document.body.style.overflow = 'auto';
+    }, 300);
+  };
+
   const handleUpdateMember = () => {
     if (!editingMember) return;
+    setIsSubmitting(true);
     
     const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
     const updatePayload = {
@@ -131,27 +132,27 @@ export default function MemberRegistry() {
     
     updateDoc(userRef, updatePayload)
       .then(() => {
-        toast({
-          title: "Member Updated",
-          description: `${formData.name}'s profile has been successfully updated.`,
-        });
+        toast({ title: "Member Updated", description: `${formData.name}'s profile has been updated.` });
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: userRef.path,
           operation: 'update',
           requestResourceData: updatePayload
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setEditingMember(null);
+        resetForm();
+        unlockUI();
       });
-    
-    setEditingMember(null);
-    resetForm();
   };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+    setIsSubmitting(true);
 
     const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
     const newUser = {
@@ -164,62 +165,54 @@ export default function MemberRegistry() {
     const usersRef = collection(db, 'users');
     addDoc(usersRef, newUser)
       .then(() => {
-        toast({
-          title: "Member Added",
-          description: `${formData.name} has been added to your team.`,
-        });
+        toast({ title: "Member Added", description: `${formData.name} has been added.` });
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: usersRef.path,
           operation: 'create',
           requestResourceData: newUser
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setIsAddDialogOpen(false);
+        resetForm();
+        unlockUI();
       });
-
-    setIsAddDialogOpen(false);
-    resetForm();
   };
 
   const confirmDelete = () => {
     if (!memberToDelete) return;
+    setIsSubmitting(true);
     
     const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
       .then(() => {
-        toast({
-          title: "Member Deleted",
-          description: "The member record has been removed.",
-        });
+        toast({ title: "Member Deleted", description: "The record has been removed." });
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'delete'
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setMemberToDelete(null);
+        unlockUI();
       });
-    
-    setMemberToDelete(null);
   };
 
   const handleChangeRole = (memberId: string, newRole: UserRole) => {
     const userRef = doc(db, 'users', memberId);
     updateDoc(userRef, { role: newRole })
       .then(() => {
-        toast({
-          title: "Role Updated",
-          description: `Member role has been changed to ${newRole}.`,
-        });
+        toast({ title: "Role Updated", description: `Changed to ${newRole}.` });
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: userRef.path,
           operation: 'update',
           requestResourceData: { role: newRole }
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
       });
   };
 
@@ -241,7 +234,7 @@ export default function MemberRegistry() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-headline font-bold">Access Restricted</h2>
-            <p className="text-muted-foreground max-w-sm mx-auto">You do not have the required permissions to view the member list.</p>
+            <p className="text-muted-foreground max-w-sm mx-auto">You do not have required permissions.</p>
           </div>
           <Button onClick={() => router.push('/dashboard')} size="lg" className="rounded-2xl h-12 px-8 active:scale-95 transition-all">Return to Dashboard</Button>
         </div>
@@ -255,9 +248,13 @@ export default function MemberRegistry() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight">Members</h1>
-            <p className="text-sm text-muted-foreground">Manage your team and track their growth journey.</p>
+            <p className="text-sm text-muted-foreground">Manage your team growth.</p>
           </div>
-          <Button className="gap-2 h-14 w-full sm:w-auto rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+          <Button 
+            className="gap-2 h-14 w-full sm:w-auto rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" 
+            onClick={() => { resetForm(); setIsAddDialogOpen(true); }}
+            disabled={isSubmitting}
+          >
             <Plus className="size-5" />
             Add Member
           </Button>
@@ -275,10 +272,6 @@ export default function MemberRegistry() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" className="gap-2 h-14 shrink-0 rounded-2xl font-bold border-white/5 active:scale-95 transition-all">
-                <Filter className="size-5" />
-                Filter
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="px-0 sm:px-8">
@@ -348,7 +341,7 @@ export default function MemberRegistry() {
                 <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading members...</div>
               ) : filteredMembers.length > 0 ? (
                 filteredMembers.map((member: any) => (
-                  <div key={member.id} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all active:scale-[0.98]">
+                  <div key={member.id} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all">
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex gap-4 min-w-0">
                         <div className="h-14 w-14 rounded-2xl bg-secondary flex items-center justify-center border border-white/5 shrink-0 shadow-lg">
@@ -381,17 +374,6 @@ export default function MemberRegistry() {
                           ))}
                         </div>
                       </div>
-
-                      {member.remarks && (
-                        <div className="space-y-3">
-                          <p className="text-[10px] text-accent uppercase font-black tracking-widest flex items-center gap-2">
-                            <StickyNote className="size-4" /> Progress Notes
-                          </p>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed break-words line-clamp-4 font-medium italic bg-secondary/20 p-4 rounded-[1.5rem] border border-white/5">
-                            {member.remarks}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))
@@ -403,49 +385,55 @@ export default function MemberRegistry() {
         </Card>
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if(!open) resetForm(); }}>
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddDialogOpen(open); }}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Add Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Enroll a new person and track their growth.</DialogDescription>
+              <DialogDescription className="font-medium text-muted-foreground">Enroll a new person.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleAddMember}>Add Member</Button>
+            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleAddMember} disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add Member"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) { setEditingMember(null); resetForm(); } }}>
+      <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) { setEditingMember(null); resetForm(); unlockUI(); } }}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Update progress and targets.</DialogDescription>
+              <DialogDescription className="font-medium text-muted-foreground">Update progress.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Cancel</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember}>Save Changes</Button>
+            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => { if(!open) { setMemberToDelete(null); unlockUI(); } }}>
         <AlertDialogContent className="rounded-[2rem] border-white/10">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
             <AlertDialogDescription className="font-medium">
-              Are you sure you want to remove <span className="font-bold text-foreground">{memberToDelete?.name}</span>? This action cannot be undone.
+              Are you sure you want to remove {memberToDelete?.name}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
             <AlertDialogCancel className="rounded-xl border-white/5 h-12 font-bold">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground h-12 font-black">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground h-12 font-black" disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -457,18 +445,18 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Full Name</Label>
+        <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Full Name</Label>
         <Input 
           value={formData.name} 
           onChange={e => setFormData({ ...formData, name: e.target.value })} 
-          placeholder="Enter member's name" 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 transition-all text-base font-bold"
+          placeholder="Name" 
+          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Status</Label>
+          <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Status</Label>
           <Select value={formData.status} onValueChange={(v: MemberStatus) => setFormData({ ...formData, status: v })}>
             <SelectTrigger className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold"><SelectValue /></SelectTrigger>
             <SelectContent className="rounded-2xl border-white/10">
@@ -477,21 +465,10 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">System Role</Label>
-          <Select value={formData.role} onValueChange={(v: UserRole) => setFormData({ ...formData, role: v })} disabled={!isAdmin}>
-            <SelectTrigger className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold"><SelectValue /></SelectTrigger>
-            <SelectContent className="rounded-2xl border-white/10">
-              <SelectItem value="Member" className="rounded-xl font-bold">Cell Member</SelectItem>
-              <SelectItem value="Leader" className="rounded-xl font-bold">Cell Leader</SelectItem>
-              <SelectItem value="Admin" className="rounded-xl font-bold">Primary Leader</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-      <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5 backdrop-blur-sm">
-        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black ml-1">
+      <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
           <CheckCircle2 className="size-4" /> Ladder of Success
         </Label>
         <div className="grid grid-cols-2 gap-3">
@@ -502,15 +479,15 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
                 key={stage} 
                 type="button"
                 className={cn(
-                  "flex items-center justify-between p-4 rounded-2xl transition-all border text-left active:scale-[0.97]",
+                  "flex items-center justify-between p-4 rounded-2xl transition-all border text-left",
                   isActive 
                     ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
-                    : "bg-secondary/10 border-white/5 text-muted-foreground hover:bg-white/5"
+                    : "bg-secondary/10 border-white/5 text-muted-foreground"
                 )} 
                 onClick={() => toggleSOL(stage)}
               >
                 <span className="text-xs font-black uppercase tracking-tighter">{stage}</span>
-                {isActive ? <Check className="size-4 shrink-0" /> : <div className="size-4 rounded-full border border-white/20 shrink-0" />}
+                {isActive ? <Check className="size-4" /> : <div className="size-4 rounded-full border border-white/20" />}
               </button>
             );
           })}
@@ -518,26 +495,26 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black ml-1">
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
           <ClipboardList className="size-4" /> Active Goals
         </Label>
         <Input 
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="e.g. Finish Module 1, Invite a friend" 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 transition-all text-base font-bold"
+          placeholder="e.g. Finish Module 1" 
+          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
         />
       </div>
 
       <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black ml-1">
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
           <StickyNote className="size-4" /> Progress Notes
         </Label>
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          placeholder="Add follow-up actions or growth observations..." 
-          className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 focus-visible:ring-1 focus-visible:ring-accent/50 transition-all text-base font-medium"
+          placeholder="Add growth observations..." 
+          className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium"
         />
       </div>
     </div>
@@ -556,7 +533,6 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-black p-3 pb-2.5">Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
           <Edit className="size-5" /> 
           <span className="font-bold">Edit</span>
@@ -566,12 +542,8 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         
         {isAdmin && (
           <>
-            <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black p-3 pb-1.5">Roles</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
-              <User className="size-5" /> Member
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Leader')} className="gap-3 p-4 rounded-xl cursor-pointer text-accent hover:bg-secondary transition-all">
-              <ShieldCheck className="size-5" /> Leader
+              <ShieldCheck className="size-5" /> Make Leader
             </DropdownMenuItem>
             <DropdownMenuSeparator className="mx-2 opacity-50" />
           </>

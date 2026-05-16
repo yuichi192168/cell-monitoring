@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo } from 'react';
@@ -53,6 +52,7 @@ export function AdminDashboard() {
   const db = useFirestore();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
@@ -89,6 +89,13 @@ export function AdminDashboard() {
     leadersCount: leaders.length,
   }), [allUsersSorted, leaders]);
 
+  const unlockUI = () => {
+    setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+      document.body.style.overflow = 'auto';
+    }, 300);
+  };
+
   const handleEditClick = (member: any) => {
     setFormData({
       name: member.name || '',
@@ -103,47 +110,46 @@ export function AdminDashboard() {
 
   const handleUpdateMember = () => {
     if (!editingMember) return;
+    setIsSubmitting(true);
     
     const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
-    const updatePayload = {
-      ...formData,
-      targetToDo: targets
-    };
+    const updatePayload = { ...formData, targetToDo: targets };
 
     const userRef = doc(db, 'users', editingMember.id);
     updateDoc(userRef, updatePayload)
       .then(() => {
-        toast({
-          title: "Record Updated",
-          description: "Member information has been synced successfully.",
-        });
+        toast({ title: "Record Updated", description: "Successfully synced." });
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: userRef.path,
           operation: 'update',
           requestResourceData: updatePayload
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setEditingMember(null);
+        unlockUI();
       });
-    
-    setEditingMember(null);
   };
 
   const confirmDelete = () => {
     if (!memberToDelete) return;
+    setIsSubmitting(true);
     const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
       .then(() => {
-        toast({
-          title: "Record Deleted",
-          description: "The user has been removed from the system.",
-        });
+        toast({ title: "Record Deleted", description: "User has been removed." });
       })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        setMemberToDelete(null);
+        unlockUI();
       });
-    setMemberToDelete(null);
   };
 
   const toggleSOL = (stage: string) => {
@@ -168,7 +174,7 @@ export function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-headline font-bold">Overview</h1>
-          <p className="text-sm text-muted-foreground">Monitoring all groups and progress.</p>
+          <p className="text-sm text-muted-foreground">Monitoring progress.</p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -193,21 +199,17 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 gap-6">
           {leaders.map(leader => {
             const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === ''));
-            
             return (
-              <Card key={leader.id} className="glass-card overflow-hidden w-full transition-all duration-300 rounded-[1.5rem] sm:rounded-[2rem] border-white/5 shadow-xl">
+              <Card key={leader.id} className="glass-card overflow-hidden w-full rounded-[1.5rem] sm:rounded-[2rem] border-white/5 shadow-xl">
                 <div className="px-5 sm:px-8 py-6 bg-secondary/20 border-b border-white/5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4 text-left min-w-0">
-                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0 shadow-lg">
+                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
                         <User className="size-6 text-accent" />
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-bold text-base sm:text-lg truncate tracking-tight">{leader.name}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-black">Cell Leader</p>
-                          <Badge variant="secondary" className="h-4 text-[9px] px-1.5 rounded-md font-bold">{leaderMembers.length} Members</Badge>
-                        </div>
+                        <Badge variant="secondary" className="h-4 text-[9px] px-1.5 rounded-md font-bold">{leaderMembers.length} Members</Badge>
                       </div>
                     </div>
                   </div>
@@ -218,7 +220,7 @@ export function AdminDashboard() {
                     <div className="min-w-[800px] w-full pb-2">
                       <Table>
                         <TableHeader className="bg-secondary/10">
-                          <TableRow className="hover:bg-transparent border-white/5">
+                          <TableRow className="border-white/5">
                             <TableHead className="w-[200px] font-bold py-4 pl-8">Member</TableHead>
                             <TableHead className="font-bold">Status</TableHead>
                             <TableHead className="font-bold">Growth</TableHead>
@@ -228,62 +230,35 @@ export function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {leaderMembers.length > 0 ? (
-                            leaderMembers.map(member => (
-                              <TableRow key={member.id} className="hover:bg-secondary/5 group transition-colors border-white/5">
-                                <TableCell className="font-bold text-sm pl-8">
-                                  <div className="flex items-center gap-2">
-                                    <div className="size-2 rounded-full bg-accent/40" />
-                                    {member.name}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">
-                                    {member.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-1">
-                                    {SOL_STAGES.map(s => (
-                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">
-                                        {s[0]}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground font-medium">
-                                  {member.targetToDo?.join(', ') || '-'}
-                                </TableCell>
-                                <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic leading-tight">
-                                  {member.remarks || '-'}
-                                </TableCell>
-                                <TableCell className="text-right pr-8">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all">
-                                        <MoreHorizontal className="size-5" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
-                                      <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold">
-                                        <Edit className="size-4" /> Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator className="mx-2 opacity-50" />
-                                      <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
-                                        <Trash2 className="size-4" /> Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic text-xs tracking-wide">
-                                No members assigned to this group yet.
+                          {leaderMembers.map(member => (
+                            <TableRow key={member.id} className="hover:bg-secondary/5 transition-colors border-white/5">
+                              <TableCell className="font-bold text-sm pl-8">{member.name}</TableCell>
+                              <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">{member.status}</Badge></TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  {SOL_STAGES.map(s => (
+                                    <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">{s[0]}</Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground">{member.targetToDo?.join(', ') || '-'}</TableCell>
+                              <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic">{member.remarks || '-'}</TableCell>
+                              <TableCell className="text-right pr-8">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all">
+                                      <MoreHorizontal className="size-5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
+                                    <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold"><Edit className="size-4" /> Edit</DropdownMenuItem>
+                                    <DropdownMenuSeparator className="mx-2 opacity-50" />
+                                    <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive cursor-pointer rounded-xl font-bold"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
                     </div>
@@ -296,112 +271,57 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+      <Dialog open={!!editingMember} onOpenChange={(open) => { if(!open) { setEditingMember(null); unlockUI(); } }}>
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] overflow-y-auto max-h-[90vh] p-0 border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium">Update progress for {editingMember?.name}.</DialogDescription>
+              <DialogDescription className="text-muted-foreground font-medium">Update progress.</DialogDescription>
             </DialogHeader>
-            
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Full Name</Label>
-                <Input 
-                  value={formData.name} 
-                  onChange={e => setFormData({ ...formData, name: e.target.value })} 
-                  className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 transition-all" 
-                />
+                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Full Name</Label>
+                <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none" />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Status</Label>
-                  <Select value={formData.status} onValueChange={(v: MemberStatus) => setFormData({ ...formData, status: v })}>
-                    <SelectTrigger className="h-14 bg-secondary/20 rounded-2xl border-none"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-2xl border-white/10">
-                      <SelectItem value="Active" className="rounded-xl">Active</SelectItem>
-                      <SelectItem value="Inactive" className="rounded-xl">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Role</Label>
-                  <Input value={formData.role} disabled className="h-14 bg-secondary/30 rounded-2xl border-none opacity-60" />
-                </div>
-              </div>
-
-              <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5 backdrop-blur-sm">
-                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black">
-                  <CheckCircle2 className="size-4" /> Ladder of Success
-                </Label>
+              <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
                 <div className="grid grid-cols-2 gap-3">
                   {SOL_STAGES.map(stage => {
                     const isActive = formData.ladderOfSuccess.includes(stage);
                     return (
-                      <button 
-                        key={stage} 
-                        type="button"
-                        className={cn(
-                          "flex items-center justify-between p-4 rounded-2xl transition-all border text-left active:scale-[0.97]",
-                          isActive 
-                            ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
-                            : "bg-secondary/10 border-white/5 text-muted-foreground hover:bg-white/5"
-                        )} 
-                        onClick={() => toggleSOL(stage)}
-                      >
-                        <span className="text-xs font-black uppercase tracking-tighter">{stage}</span>
-                        {isActive ? <Check className="size-4 shrink-0" /> : <div className="size-4 rounded-full border border-white/20 shrink-0" />}
+                      <button key={stage} type="button" className={cn("flex items-center justify-between p-4 rounded-2xl transition-all border", isActive ? "bg-primary text-primary-foreground" : "bg-secondary/10 border-white/5")} onClick={() => toggleSOL(stage)}>
+                        <span className="text-xs font-black uppercase">{stage}</span>
+                        {isActive ? <Check className="size-4" /> : <div className="size-4 rounded-full border border-white/20" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
-
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black ml-1">
-                  <ClipboardList className="size-4" /> Active Goals
-                </Label>
-                <Input 
-                  value={formData.targetToDo} 
-                  onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-                  placeholder="e.g. Finish Module 1, Invite a friend" 
-                  className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-accent uppercase tracking-[0.15em] text-[10px] font-black ml-1">
-                  <StickyNote className="size-4" /> Progress Notes
-                </Label>
-                <Textarea 
-                  value={formData.remarks} 
-                  onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-                  className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 focus-visible:ring-1 focus-visible:ring-accent/50 transition-all"
-                  placeholder="Add follow-up notes..."
-                />
+                <Label className="text-[10px] uppercase tracking-widest font-black">Progress Notes</Label>
+                <Textarea value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} className="min-h-[140px] bg-secondary/20 rounded-2xl border-none" />
               </div>
             </div>
           </div>
-
-          <DialogFooter className="p-6 sm:px-8 sm:pb-8 pt-0 bg-transparent flex flex-row gap-3">
-            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 hover:bg-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Cancel</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember}>Save Changes</Button>
+          <DialogFooter className="p-6 sm:px-8 sm:pb-8 pt-0 flex flex-row gap-3">
+            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5" onClick={() => setEditingMember(null)}>Cancel</Button>
+            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl" onClick={handleUpdateMember} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => { if(!open) { setMemberToDelete(null); unlockUI(); } }}>
         <AlertDialogContent className="rounded-[2rem] border-white/10">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
-            <AlertDialogDescription className="font-medium">
-              Are you sure you want to remove <span className="font-bold text-foreground">{memberToDelete?.name}</span>? This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription className="font-medium">Remove {memberToDelete?.name} permanently.</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel className="rounded-xl border-white/5 h-12 font-bold">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground h-12 font-black">Delete</AlertDialogAction>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl border-white/5 h-12">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive h-12 font-black" disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -411,10 +331,10 @@ export function AdminDashboard() {
 
 function StatCard({ title, value, label, icon: Icon }: any) {
   return (
-    <Card className="glass-card transition-all hover:border-accent/30 hover:translate-y-[-2px] duration-300 w-full rounded-[2rem]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6 sm:p-8">
+    <Card className="glass-card rounded-[2rem]">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 sm:p-8 pb-3">
         <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{title}</CardTitle>
-        <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center border border-white/5 shadow-inner">
+        <div className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center border border-white/5">
           <Icon className="h-6 w-6 text-accent" />
         </div>
       </CardHeader>
