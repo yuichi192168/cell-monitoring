@@ -39,6 +39,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
           setError(permissionError);
           console.warn("Firestore Permission Denied:", err.message);
         } else if (err.code === 'unavailable') {
+          // This is expected when offline. Persistence handles it, so we just log it.
           console.log("Firestore temporarily unavailable (likely offline). Using cached data.");
         } else {
           console.error("Firestore error:", err);

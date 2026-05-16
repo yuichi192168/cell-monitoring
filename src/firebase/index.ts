@@ -20,12 +20,14 @@ export function initializeFirebase() {
   // Use a singleton pattern to avoid multiple initializations of Firestore with cache
   if (!firestoreInstance) {
     try {
-      // Try to initialize with persistence
+      // Initialize with multi-tab persistence as per documentation
       firestoreInstance = initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        localCache: persistentLocalCache({ 
+          tabManager: persistentMultipleTabManager() 
+        })
       });
     } catch (e) {
-      // If already initialized, fallback to getFirestore
+      // If already initialized (e.g. during hot reload), fallback to getFirestore
       firestoreInstance = getFirestore(app);
     }
   }

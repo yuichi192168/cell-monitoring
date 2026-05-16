@@ -37,6 +37,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
           setError(permissionError);
           console.warn("Firestore Permission Denied:", err.message);
         } else if (err.code === 'unavailable') {
+          // This is expected when offline. Persistence handles it, so we just log it.
           console.log("Document temporarily unavailable (likely offline). Using cached data.");
         } else {
           console.error("Firestore error:", err);
