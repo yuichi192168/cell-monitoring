@@ -46,10 +46,12 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export function AdminDashboard() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const db = useFirestore();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
@@ -110,6 +112,12 @@ export function AdminDashboard() {
 
     const userRef = doc(db, 'users', editingMember.id);
     updateDoc(userRef, updatePayload)
+      .then(() => {
+        toast({
+          title: "Record Updated",
+          description: "Member information has been synced successfully.",
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
@@ -125,9 +133,16 @@ export function AdminDashboard() {
   const confirmDelete = () => {
     if (!memberToDelete) return;
     const userRef = doc(db, 'users', memberToDelete.id);
-    deleteDoc(userRef).catch(async () => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
-    });
+    deleteDoc(userRef)
+      .then(() => {
+        toast({
+          title: "Record Deleted",
+          description: "The user has been removed from the system.",
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
+      });
     setMemberToDelete(null);
   };
 
@@ -230,7 +245,7 @@ export function AdminDashboard() {
                                 <TableCell>
                                   <div className="flex gap-1">
                                     {SOL_STAGES.map(s => (
-                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">
+                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">
                                         {s[0]}
                                       </Badge>
                                     ))}

@@ -35,7 +35,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -48,10 +47,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MemberRegistry() {
   const { user: currentUser } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
@@ -128,6 +129,12 @@ export default function MemberRegistry() {
     const userRef = doc(db, 'users', editingMember.id);
     
     updateDoc(userRef, updatePayload)
+      .then(() => {
+        toast({
+          title: "Member Updated",
+          description: `${formData.name}'s profile has been successfully updated.`,
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
@@ -155,6 +162,12 @@ export default function MemberRegistry() {
 
     const usersRef = collection(db, 'users');
     addDoc(usersRef, newUser)
+      .then(() => {
+        toast({
+          title: "Member Added",
+          description: `${formData.name} has been added to your team.`,
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: usersRef.path,
@@ -173,6 +186,12 @@ export default function MemberRegistry() {
     
     const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
+      .then(() => {
+        toast({
+          title: "Member Deleted",
+          description: "The member record has been removed.",
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
@@ -187,6 +206,12 @@ export default function MemberRegistry() {
   const handleChangeRole = (memberId: string, newRole: UserRole) => {
     const userRef = doc(db, 'users', memberId);
     updateDoc(userRef, { role: newRole })
+      .then(() => {
+        toast({
+          title: "Role Updated",
+          description: `Member role has been changed to ${newRole}.`,
+        });
+      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
@@ -349,7 +374,7 @@ export default function MemberRegistry() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {SOL_STAGES.map(s => (
-                            <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'outline'} className="text-[10px] h-7 px-3.5 rounded-xl border-white/5 font-black uppercase tracking-tighter">
+                            <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[10px] h-7 px-3.5 rounded-xl border-white/5 font-black uppercase tracking-tighter">
                               {s}
                             </Badge>
                           ))}
