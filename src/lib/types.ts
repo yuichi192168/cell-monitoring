@@ -2,7 +2,7 @@ export type UserRole = 'Admin' | 'Leader' | 'Member';
 
 export type MemberStatus = 'Active' | 'Inactive';
 
-export const SOL_STAGES = ['Win', 'Consolidate', 'Discipleship', 'SOL'] as const;
+export const SOL_STAGES = ['Win', 'Consolidate', 'Discipleship', 'Send'] as const;
 export type SOLStage = (typeof SOL_STAGES)[number];
 
 export interface Member {
