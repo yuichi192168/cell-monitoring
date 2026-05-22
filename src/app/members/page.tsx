@@ -501,7 +501,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         <Input 
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="e.g. Finish Module 1" 
+          placeholder="" 
           className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
         />
       </div>
