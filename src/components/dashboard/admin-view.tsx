@@ -1,10 +1,11 @@
+
 "use client"
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, CheckCircle2, ClipboardList, StickyNote, User, Check } from 'lucide-react';
+import { collection, query, doc, updateDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
+import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,6 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
@@ -38,14 +38,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { SOL_STAGES, UserRole, MemberStatus } from '@/lib/types';
+import { SOL_STAGES, UserRole, MemberStatus, ActivityLog } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { recordActivityLog } from '@/firebase/activity-logs';
+import { formatDistanceToNow } from 'date-fns';
 
 export function AdminDashboard() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -70,7 +71,17 @@ export function AdminDashboard() {
     return query(collection(db, 'users'));
   }, [db, currentUser?.id, currentUser?.role]);
 
+  const activityLogsQuery = useMemoFirebase(() => {
+    if (!currentUser || currentUser.role !== 'Admin') return null;
+    return query(
+      collection(db, 'activityLogs'),
+      orderBy('timestamp', 'desc'),
+      limit(20)
+    );
+  }, [db, currentUser?.id, currentUser?.role]);
+
   const { data: allUsersRaw, loading: dataLoading } = useCollection(allUsersQuery);
+  const { data: activityLogsRaw, loading: logsLoading } = useCollection(activityLogsQuery);
 
   const loading = authLoading || dataLoading;
 
@@ -79,6 +90,8 @@ export function AdminDashboard() {
       (a.name || '').localeCompare(b.name || '')
     );
   }, [allUsersRaw]);
+
+  const activityLogs = (activityLogsRaw as ActivityLog[]) || [];
 
   const leaders = useMemo(() => allUsersSorted.filter(u => u.role === 'Leader'), [allUsersSorted]);
   const members = useMemo(() => allUsersSorted.filter(u => u.role === 'Member'), [allUsersSorted]);
@@ -109,7 +122,7 @@ export function AdminDashboard() {
   };
 
   const handleUpdateMember = () => {
-    if (!editingMember) return;
+    if (!editingMember || !currentUser) return;
     setIsSubmitting(true);
     
     const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
@@ -119,6 +132,14 @@ export function AdminDashboard() {
     updateDoc(userRef, updatePayload)
       .then(() => {
         toast({ title: "Record Updated", description: "Successfully synced." });
+        recordActivityLog(db, {
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          action: 'update',
+          targetId: editingMember.id,
+          targetName: formData.name,
+          details: `Admin updated profile for ${formData.name}`
+        });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -135,12 +156,20 @@ export function AdminDashboard() {
   };
 
   const confirmDelete = () => {
-    if (!memberToDelete) return;
+    if (!memberToDelete || !currentUser) return;
     setIsSubmitting(true);
     const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
       .then(() => {
         toast({ title: "Record Deleted", description: "User has been removed." });
+        recordActivityLog(db, {
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          action: 'delete',
+          targetId: memberToDelete.id,
+          targetName: memberToDelete.name,
+          details: `Admin deleted member: ${memberToDelete.name}`
+        });
       })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
@@ -193,81 +222,121 @@ export function AdminDashboard() {
         <StatCard title="Leaders" value={stats.leadersCount.toString()} label="Cell leaders" icon={Activity} />
       </div>
 
-      <div className="space-y-8">
-        <h2 className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Cell Groups</h2>
-        
-        <div className="grid grid-cols-1 gap-6">
-          {leaders.map(leader => {
-            const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === ''));
-            return (
-              <Card key={leader.id} className="glass-card overflow-hidden w-full rounded-[1.5rem] sm:rounded-[2rem] border-white/5 shadow-xl">
-                <div className="px-5 sm:px-8 py-6 bg-secondary/20 border-b border-white/5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 text-left min-w-0">
-                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
-                        <User className="size-6 text-accent" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-base sm:text-lg truncate tracking-tight">{leader.name}</h3>
-                        <Badge variant="secondary" className="h-4 text-[9px] px-1.5 rounded-md font-bold">{leaderMembers.length} Members</Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Cell Groups</h2>
+          
+          <div className="space-y-6">
+            {leaders.map(leader => {
+              const leaderMembers = members.filter(m => m.assignedLeaderId === leader.id && (m.name.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === ''));
+              return (
+                <Card key={leader.id} className="glass-card overflow-hidden w-full rounded-[1.5rem] sm:rounded-[2rem] border-white/5 shadow-xl">
+                  <div className="px-5 sm:px-8 py-6 bg-secondary/20 border-b border-white/5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 text-left min-w-0">
+                        <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
+                          <User className="size-6 text-accent" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-base sm:text-lg truncate tracking-tight">{leader.name}</h3>
+                          <Badge variant="secondary" className="h-4 text-[9px] px-1.5 rounded-md font-bold">{leaderMembers.length} Members</Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <CardContent className="p-0">
-                  <ScrollArea className="w-full">
-                    <div className="min-w-[800px] w-full pb-2">
-                      <Table>
-                        <TableHeader className="bg-secondary/10">
-                          <TableRow className="border-white/5">
-                            <TableHead className="w-[200px] font-bold py-4 pl-8">Member</TableHead>
-                            <TableHead className="font-bold">Status</TableHead>
-                            <TableHead className="font-bold">Growth</TableHead>
-                            <TableHead className="font-bold">Targets</TableHead>
-                            <TableHead className="font-bold">Notes</TableHead>
-                            <TableHead className="text-right font-bold pr-8">Action</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {leaderMembers.map(member => (
-                            <TableRow key={member.id} className="hover:bg-secondary/5 transition-colors border-white/5">
-                              <TableCell className="font-bold text-sm pl-8">{member.name}</TableCell>
-                              <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">{member.status}</Badge></TableCell>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  {SOL_STAGES.map(s => (
-                                    <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">{s[0]}</Badge>
-                                  ))}
-                                </div>
-                              </TableCell>
-                              <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground">{member.targetToDo?.join(', ') || '-'}</TableCell>
-                              <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic">{member.remarks || '-'}</TableCell>
-                              <TableCell className="text-right pr-8">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all">
-                                      <MoreHorizontal className="size-5" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
-                                    <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold"><Edit className="size-4" /> Edit</DropdownMenuItem>
-                                    <DropdownMenuSeparator className="mx-2 opacity-50" />
-                                    <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive cursor-pointer rounded-xl font-bold"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
+                  
+                  <CardContent className="p-0">
+                    <ScrollArea className="w-full">
+                      <div className="min-w-[800px] w-full pb-2">
+                        <Table>
+                          <TableHeader className="bg-secondary/10">
+                            <TableRow className="border-white/5">
+                              <TableHead className="w-[200px] font-bold py-4 pl-8">Member</TableHead>
+                              <TableHead className="font-bold">Status</TableHead>
+                              <TableHead className="font-bold">Growth</TableHead>
+                              <TableHead className="font-bold">Targets</TableHead>
+                              <TableHead className="font-bold">Notes</TableHead>
+                              <TableHead className="text-right font-bold pr-8">Action</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {leaderMembers.map(member => (
+                              <TableRow key={member.id} className="hover:bg-secondary/5 transition-colors border-white/5">
+                                <TableCell className="font-bold text-sm pl-8">{member.name}</TableCell>
+                                <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">{member.status}</Badge></TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    {SOL_STAGES.map(s => (
+                                      <Badge key={s} variant={member.ladderOfSuccess?.includes(s) ? 'default' : 'secondary'} className="text-[8px] h-4.5 px-1.5 border-none rounded-md">{s[0]}</Badge>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="max-w-[140px] truncate text-[10px] text-muted-foreground">{member.targetToDo?.join(', ') || '-'}</TableCell>
+                                <TableCell className="max-w-[180px] truncate text-[10px] text-muted-foreground italic">{member.remarks || '-'}</TableCell>
+                                <TableCell className="text-right pr-8">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary/40 active:scale-90 transition-all">
+                                        <MoreHorizontal className="size-5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
+                                      <DropdownMenuItem onClick={() => handleEditClick(member)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold"><Edit className="size-4" /> Edit</DropdownMenuItem>
+                                      <DropdownMenuSeparator className="mx-2 opacity-50" />
+                                      <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive cursor-pointer rounded-xl font-bold"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <ScrollBar orientation="horizontal" className="h-2 bg-secondary/40" />
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground px-1 flex items-center gap-2">
+            <History className="size-4" /> Activity Feed
+          </h2>
+          <Card className="glass-card rounded-[2rem] border-white/5 shadow-xl overflow-hidden">
+            <CardContent className="p-0">
+              {logsLoading ? (
+                <div className="p-8 text-center animate-pulse text-muted-foreground">Loading activity...</div>
+              ) : activityLogs.length > 0 ? (
+                <div className="divide-y divide-white/5">
+                  {activityLogs.map((log) => (
+                    <div key={log.id} className="p-5 hover:bg-secondary/10 transition-colors space-y-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <p className="text-xs font-black tracking-tight leading-tight">
+                          <span className="text-accent">{log.actorName}</span>
+                          <span className="text-muted-foreground font-medium mx-1.5">
+                            {log.action === 'create' ? 'enrolled' : log.action === 'update' ? 'updated' : 'removed'}
+                          </span>
+                          <span className="text-foreground">{log.targetName}</span>
+                        </p>
+                        <Badge variant="outline" className="text-[8px] h-4 py-0 font-bold opacity-50 uppercase tracking-tighter">
+                          {log.action}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-medium">
+                        <Clock className="size-3" />
+                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                      </div>
                     </div>
-                    <ScrollBar orientation="horizontal" className="h-2 bg-secondary/40" />
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  ))}
+                </div>
+              ) : (
+                <div className="p-12 text-center text-muted-foreground italic text-xs">No recent activity found.</div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 

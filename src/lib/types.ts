@@ -1,3 +1,4 @@
+
 export type UserRole = 'Admin' | 'Leader' | 'Member';
 
 export type MemberStatus = 'Active' | 'Inactive';
@@ -34,4 +35,15 @@ export interface AppStats {
   totalCellMembers: number;
   growthRate: number;
   activeSessions: number;
+}
+
+export interface ActivityLog {
+  id?: string;
+  actorId: string;
+  actorName: string;
+  action: 'create' | 'update' | 'delete';
+  targetId: string;
+  targetName: string;
+  details: string;
+  timestamp: string;
 }

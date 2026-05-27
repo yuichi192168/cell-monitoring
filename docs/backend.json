@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -53,6 +54,21 @@
         }
       },
       "required": ["name", "role"]
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "Record of actions performed by leaders on member data.",
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string" },
+        "actorName": { "type": "string" },
+        "action": { "type": "string", "enum": ["create", "update", "delete"] },
+        "targetId": { "type": "string" },
+        "targetName": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorId", "actorName", "action", "timestamp"]
     }
   },
   "auth": {
@@ -62,6 +78,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/backend/entities/User" },
       "description": "Main collection for user profiles and member records."
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/backend/entities/ActivityLog" },
+      "description": "Audit log for tracking system actions."
     }
   }
 }

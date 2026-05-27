@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useCallback } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,6 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
@@ -48,6 +48,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { recordActivityLog } from '@/firebase/activity-logs';
 
 export default function MemberRegistry() {
   const { user: currentUser } = useAuth();
@@ -119,7 +120,7 @@ export default function MemberRegistry() {
   };
 
   const handleUpdateMember = () => {
-    if (!editingMember) return;
+    if (!editingMember || !currentUser) return;
     setIsSubmitting(true);
     
     const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
@@ -133,6 +134,14 @@ export default function MemberRegistry() {
     updateDoc(userRef, updatePayload)
       .then(() => {
         toast({ title: "Member Updated", description: `${formData.name}'s profile has been updated.` });
+        recordActivityLog(db, {
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          action: 'update',
+          targetId: editingMember.id,
+          targetName: formData.name,
+          details: `Updated profile for ${formData.name}`
+        });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -164,8 +173,16 @@ export default function MemberRegistry() {
 
     const usersRef = collection(db, 'users');
     addDoc(usersRef, newUser)
-      .then(() => {
+      .then((docRef) => {
         toast({ title: "Member Added", description: `${formData.name} has been added.` });
+        recordActivityLog(db, {
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          action: 'create',
+          targetId: docRef.id,
+          targetName: formData.name,
+          details: `Added new member: ${formData.name}`
+        });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -183,13 +200,21 @@ export default function MemberRegistry() {
   };
 
   const confirmDelete = () => {
-    if (!memberToDelete) return;
+    if (!memberToDelete || !currentUser) return;
     setIsSubmitting(true);
     
     const userRef = doc(db, 'users', memberToDelete.id);
     deleteDoc(userRef)
       .then(() => {
         toast({ title: "Member Deleted", description: "The record has been removed." });
+        recordActivityLog(db, {
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          action: 'delete',
+          targetId: memberToDelete.id,
+          targetName: memberToDelete.name,
+          details: `Deleted member: ${memberToDelete.name}`
+        });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
@@ -202,6 +227,7 @@ export default function MemberRegistry() {
   };
 
   const handleChangeRole = (memberId: string, newRole: UserRole) => {
+    if (!currentUser) return;
     const userRef = doc(db, 'users', memberId);
     updateDoc(userRef, { role: newRole })
       .then(() => {
@@ -457,13 +483,10 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Status</Label>
-          <Select value={formData.status} onValueChange={(v: MemberStatus) => setFormData({ ...formData, status: v })}>
-            <SelectTrigger className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold"><SelectValue /></SelectTrigger>
-            <SelectContent className="rounded-2xl border-white/10">
-              <SelectItem value="Active" className="rounded-xl font-bold">Active</SelectItem>
-              <SelectItem value="Inactive" className="rounded-xl font-bold">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
+          <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
         </div>
       </div>
 

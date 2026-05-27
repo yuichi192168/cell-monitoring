@@ -7,9 +7,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Optimization: Read role from the document
-    // We use getAfter if we want to check state after a write, 
-    // but for simple reads get() is standard.
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
@@ -27,38 +24,36 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-
-      // READ SINGLE DOCUMENT
       allow get: if isAuthenticated() && (
         isAdmin() ||
         isOwner(userId) ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // LIST USERS
-      // Simplified list rule to avoid startup race conditions with get()
-      // The frontend handles filtering by assignedLeaderId
       allow list: if isAuthenticated();
 
-      // CREATE USER
       allow create: if isAuthenticated() && (
         isAdmin() ||
         isOwner(userId) ||
         (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // UPDATE USER
       allow update: if isAuthenticated() && (
         isAdmin() ||
         isOwner(userId) ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
 
-      // DELETE USER
       allow delete: if isAuthenticated() && (
         isAdmin() ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
+    }
+
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
     }
   }
 }
