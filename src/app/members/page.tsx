@@ -84,9 +84,13 @@ export default function MemberRegistry() {
 
   const filteredMembers = React.useMemo(() => {
     return (membersRaw || [])
-      .filter((m: any) => m.role === 'Member' && m.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((m: any) => 
+        (m.role === 'Member' || m.role === 'Leader') && 
+        m.id !== currentUser?.id &&
+        m.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [membersRaw, searchTerm]);
+  }, [membersRaw, searchTerm, currentUser?.id]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -298,7 +302,7 @@ export default function MemberRegistry() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-white">Members</h1>
-            <p className="text-sm text-muted-foreground">Manage your team growth.</p>
+            <p className="text-sm text-muted-foreground">Manage your team and subordinate leaders.</p>
           </div>
           <Button 
             className="gap-2 h-14 w-full sm:w-auto rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" 
@@ -331,7 +335,8 @@ export default function MemberRegistry() {
                   <Table>
                     <TableHeader className="bg-secondary/30">
                       <TableRow className="hover:bg-transparent border-white/5">
-                        <TableHead className="font-bold py-5 pl-8 text-muted-foreground">Member</TableHead>
+                        <TableHead className="font-bold py-5 pl-8 text-muted-foreground">Participant</TableHead>
+                        <TableHead className="font-bold text-muted-foreground">Role</TableHead>
                         <TableHead className="font-bold text-muted-foreground">Status</TableHead>
                         <TableHead className="font-bold text-muted-foreground">Growth</TableHead>
                         <TableHead className="font-bold text-muted-foreground">Notes</TableHead>
@@ -340,7 +345,7 @@ export default function MemberRegistry() {
                     </TableHeader>
                     <TableBody>
                       {loading ? (
-                        <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground animate-pulse">Loading members...</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground animate-pulse">Loading participants...</TableCell></TableRow>
                       ) : filteredMembers.length > 0 ? (
                         filteredMembers.map((member: any) => (
                           <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors border-white/5 cursor-pointer" onClick={() => openCard(member, true)}>
@@ -351,6 +356,11 @@ export default function MemberRegistry() {
                                 </div>
                                 <div className="font-bold text-sm tracking-tight text-white">{member.name}</div>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px] font-bold h-5 px-2 rounded-lg border-white/10 text-muted-foreground">
+                                {member.role}
+                              </Badge>
                             </TableCell>
                             <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] font-bold h-5 px-2 rounded-lg">{member.status || 'Active'}</Badge></TableCell>
                             <TableCell>
@@ -378,7 +388,7 @@ export default function MemberRegistry() {
                           </TableRow>
                         ))
                       ) : (
-                        <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground italic tracking-wide">No members found.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground italic tracking-wide">No participants found.</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -389,7 +399,7 @@ export default function MemberRegistry() {
 
             <div className="sm:hidden px-4 space-y-4 pb-8">
               {loading ? (
-                <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading members...</div>
+                <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading participants...</div>
               ) : filteredMembers.length > 0 ? (
                 filteredMembers.map((member: any) => (
                   <div key={member.id} onClick={() => openCard(member, true)} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all active:scale-95">
@@ -400,7 +410,10 @@ export default function MemberRegistry() {
                         </div>
                         <div className="min-w-0 pt-1">
                           <div className="font-black text-lg truncate tracking-tight leading-tight text-white">{member.name}</div>
-                          <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] h-5 mt-1.5 font-bold px-2.5 rounded-lg">{member.status || 'Active'}</Badge>
+                          <div className="flex gap-2 mt-1.5">
+                            <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] h-5 font-bold px-2.5 rounded-lg">{member.status || 'Active'}</Badge>
+                            <Badge variant="outline" className="text-[10px] h-5 font-bold px-2.5 rounded-lg border-white/10 text-muted-foreground">{member.role}</Badge>
+                          </div>
                         </div>
                       </div>
                       <div onClick={(e) => e.stopPropagation()}>
@@ -432,7 +445,7 @@ export default function MemberRegistry() {
                   </div>
                 ))
               ) : (
-                <div className="py-24 text-center text-muted-foreground italic tracking-wide">No members found.</div>
+                <div className="py-24 text-center text-muted-foreground italic tracking-wide">No participants found.</div>
               )}
             </div>
           </CardContent>
@@ -443,15 +456,15 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl bg-card">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black text-white">Add Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Enroll a new person.</DialogDescription>
+              <DialogTitle className="text-2xl font-black text-white">Add Participant</DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">Enroll a new member or leader.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={false} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
             <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleAddMember} disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Member"}
+              {isSubmitting ? "Adding..." : "Add Participant"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -461,9 +474,9 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl bg-card">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black text-white">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
+              <DialogTitle className="text-2xl font-black text-white">{isViewOnly ? 'Profile View' : 'Edit Profile'}</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">
-                {isViewOnly ? 'Viewing profile history.' : 'Detailed growth view.'}
+                {isViewOnly ? 'Viewing profile history.' : 'Update participant details.'}
               </DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={isViewOnly} />
@@ -482,7 +495,7 @@ export default function MemberRegistry() {
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => { if(!open) { setMemberToDelete(null); unlockUI(); } }}>
         <AlertDialogContent className="rounded-[2rem] border-white/10 bg-card">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black text-white">Delete Member?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-black text-white">Delete Participant?</AlertDialogTitle>
             <AlertDialogDescription className="font-medium text-muted-foreground">
               Are you sure you want to remove {memberToDelete?.name}?
             </AlertDialogDescription>
@@ -519,6 +532,13 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           <select disabled={isViewOnly} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none text-white">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Role</Label>
+          <select disabled={isViewOnly} value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none text-white">
+            <option value="Member">Member</option>
+            <option value="Leader">Leader</option>
           </select>
         </div>
       </div>
@@ -609,22 +629,24 @@ function MemberActions({ member, currentUser, onEdit, onOpen, onDelete, onChange
       <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5 bg-card">
         <DropdownMenuItem onClick={onOpen} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all text-white">
           <Eye className="size-5" /> 
-          <span className="font-bold">View Card</span>
+          <span className="font-bold">View Profile</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all text-white">
           <Edit className="size-5" /> 
-          <span className="font-bold">Edit Profile</span>
+          <span className="font-bold">Edit Details</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator className="mx-2 opacity-50" />
         
-        {isAdmin && (
-          <>
-            <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Leader')} className="gap-3 p-4 rounded-xl cursor-pointer text-accent hover:bg-secondary transition-all">
-              <ShieldCheck className="size-5" /> Make Leader
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="mx-2 opacity-50" />
-          </>
+        {isAdmin && member.role === 'Member' && (
+          <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Leader')} className="gap-3 p-4 rounded-xl cursor-pointer text-accent hover:bg-secondary transition-all">
+            <ShieldCheck className="size-5" /> Promote to Leader
+          </DropdownMenuItem>
+        )}
+        {isAdmin && member.role === 'Leader' && (
+          <DropdownMenuItem onClick={() => onChangeRole(member.id, 'Member')} className="gap-3 p-4 rounded-xl cursor-pointer text-accent hover:bg-secondary transition-all">
+            <User className="size-5" /> Change to Member
+          </DropdownMenuItem>
         )}
 
         {(isAdmin || isLeader) && (

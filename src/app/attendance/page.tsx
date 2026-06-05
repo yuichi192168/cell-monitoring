@@ -27,15 +27,28 @@ export default function AttendancePage() {
   const [presentIds, setPresentIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load members assigned to this leader
+  // Load members assigned to this leader (including subordinate leaders)
   const membersQuery = useMemoFirebase(() => {
     if (!currentUser || currentUser.role === 'Member') return null;
     const usersRef = collection(db, 'users');
-    if (currentUser.role === 'Admin') return query(usersRef, where('role', '==', 'Member'));
-    return query(usersRef, where('assignedLeaderId', '==', currentUser.id), where('role', '==', 'Member'));
+    
+    // Admins see everyone who isn't an Admin
+    if (currentUser.role === 'Admin') {
+      return query(usersRef, where('role', 'in', ['Member', 'Leader']));
+    }
+    
+    // Leaders see everyone assigned to them, regardless of their role (Members or subordinate Leaders)
+    return query(usersRef, where('assignedLeaderId', '==', currentUser.id));
   }, [db, currentUser?.id, currentUser?.role]);
 
-  const { data: members, loading: membersLoading } = useCollection(membersQuery);
+  const { data: membersRaw, loading: membersLoading } = useCollection(membersQuery);
+
+  // Filter out the current user if they are in the list
+  const members = useMemo(() => {
+    return (membersRaw || [])
+      .filter((m: any) => m.id !== currentUser?.id)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [membersRaw, currentUser?.id]);
 
   // Load past attendance for export
   const attendanceQuery = useMemoFirebase(() => {
@@ -100,7 +113,7 @@ export default function AttendancePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-headline font-bold text-white">Cell Attendance</h1>
-            <p className="text-sm text-muted-foreground">Track who attended your group sessions.</p>
+            <p className="text-sm text-muted-foreground">Track attendance for your group members and subordinate leaders.</p>
           </div>
           <Button variant="outline" onClick={handleExport} className="gap-2 h-12 rounded-2xl font-bold border-white/5 active:scale-95 transition-all">
             <Download className="size-4" />
@@ -113,7 +126,7 @@ export default function AttendancePage() {
             <CardHeader className="flex flex-row items-center justify-between bg-secondary/10 border-b border-white/5 p-6 sm:p-8">
               <div className="space-y-1">
                 <CardTitle className="text-xl font-black text-white">Mark Presence</CardTitle>
-                <CardDescription>Select members present today.</CardDescription>
+                <CardDescription>Select participants present today.</CardDescription>
               </div>
               <Popover>
                 <PopoverTrigger asChild>
@@ -131,7 +144,7 @@ export default function AttendancePage() {
               <ScrollArea className="h-[500px]">
                 <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {membersLoading ? (
-                    <div className="col-span-full py-20 text-center animate-pulse text-muted-foreground font-bold uppercase tracking-widest text-[10px]">Loading Members...</div>
+                    <div className="col-span-full py-20 text-center animate-pulse text-muted-foreground font-bold uppercase tracking-widest text-[10px]">Loading Participants...</div>
                   ) : members && members.length > 0 ? (
                     members.map((member: any) => {
                       const isPresent = presentIds.includes(member.id);
@@ -153,14 +166,19 @@ export default function AttendancePage() {
                             )}>
                               <Users className={cn("size-5", isPresent ? "text-white" : "text-muted-foreground")} />
                             </div>
-                            <span className="font-bold truncate text-sm">{member.name}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold truncate text-sm block">{member.name}</span>
+                              <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 border-white/10 text-muted-foreground/60">
+                                {member.role}
+                              </Badge>
+                            </div>
                           </div>
                           {isPresent ? <UserCheck className="size-5" /> : <UserMinus className="size-5 opacity-20" />}
                         </button>
                       );
                     })
                   ) : (
-                    <div className="col-span-full py-20 text-center italic text-muted-foreground">No members assigned yet.</div>
+                    <div className="col-span-full py-20 text-center italic text-muted-foreground">No participants assigned yet.</div>
                   )}
                 </div>
               </ScrollArea>
