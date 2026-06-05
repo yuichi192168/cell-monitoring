@@ -519,11 +519,11 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
         <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
           <Fingerprint className="size-4" /> Characteristics
         </Label>
-        <Input 
+        <Textarea 
           value={formData.characteristics} 
           onChange={e => setFormData({ ...formData, characteristics: e.target.value })} 
-          placeholder="e.g. Introvert, Dedicated, Musical" 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
+          placeholder="Detailed traits, introversion/extroversion, spiritual history, etc." 
+          className="min-h-[100px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-bold"
         />
       </div>
 
@@ -574,7 +574,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
           onKeyDown={handleNotesKeyDown}
-          placeholder="Add growth observations... (Bullets auto-add on Enter)" 
+          placeholder="Add growth observations... (Press Enter for auto-bullets)" 
           className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium"
         />
       </div>
