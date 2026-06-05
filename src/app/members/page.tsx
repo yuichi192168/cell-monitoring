@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useCallback } from 'react';
@@ -119,8 +118,10 @@ export default function MemberRegistry() {
 
   const unlockUI = () => {
     setTimeout(() => {
-      document.body.style.pointerEvents = 'auto';
-      document.body.style.overflow = 'auto';
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+      }
     }, 300);
   };
 
@@ -296,7 +297,7 @@ export default function MemberRegistry() {
       <div className="space-y-6 animate-in fade-in duration-500 pb-24 sm:pb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight">Members</h1>
+            <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-white">Members</h1>
             <p className="text-sm text-muted-foreground">Manage your team growth.</p>
           </div>
           <Button 
@@ -330,11 +331,11 @@ export default function MemberRegistry() {
                   <Table>
                     <TableHeader className="bg-secondary/30">
                       <TableRow className="hover:bg-transparent border-white/5">
-                        <TableHead className="font-bold py-5 pl-8">Member</TableHead>
-                        <TableHead className="font-bold">Status</TableHead>
-                        <TableHead className="font-bold">Growth</TableHead>
-                        <TableHead className="font-bold">Notes</TableHead>
-                        <TableHead className="text-right font-bold pr-8">Actions</TableHead>
+                        <TableHead className="font-bold py-5 pl-8 text-muted-foreground">Member</TableHead>
+                        <TableHead className="font-bold text-muted-foreground">Status</TableHead>
+                        <TableHead className="font-bold text-muted-foreground">Growth</TableHead>
+                        <TableHead className="font-bold text-muted-foreground">Notes</TableHead>
+                        <TableHead className="text-right font-bold pr-8 text-muted-foreground">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -348,7 +349,7 @@ export default function MemberRegistry() {
                                 <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center border border-white/5 shadow-inner">
                                   <User className="size-5 text-muted-foreground" />
                                 </div>
-                                <div className="font-bold text-sm tracking-tight">{member.name}</div>
+                                <div className="font-bold text-sm tracking-tight text-white">{member.name}</div>
                               </div>
                             </TableCell>
                             <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] font-bold h-5 px-2 rounded-lg">{member.status || 'Active'}</Badge></TableCell>
@@ -398,7 +399,7 @@ export default function MemberRegistry() {
                           <User className="size-7 text-muted-foreground" />
                         </div>
                         <div className="min-w-0 pt-1">
-                          <div className="font-black text-lg truncate tracking-tight leading-tight">{member.name}</div>
+                          <div className="font-black text-lg truncate tracking-tight leading-tight text-white">{member.name}</div>
                           <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] h-5 mt-1.5 font-bold px-2.5 rounded-lg">{member.status || 'Active'}</Badge>
                         </div>
                       </div>
@@ -439,10 +440,10 @@ export default function MemberRegistry() {
       </div>
 
       <Dialog open={isAddDialogOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
+        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl bg-card">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">Add Member</DialogTitle>
+              <DialogTitle className="text-2xl font-black text-white">Add Member</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">Enroll a new person.</DialogDescription>
             </DialogHeader>
             <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={false} />
@@ -457,10 +458,10 @@ export default function MemberRegistry() {
       </Dialog>
 
       <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) { setEditingMember(null); resetForm(); unlockUI(); } }}>
-        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
+        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl bg-card">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
+              <DialogTitle className="text-2xl font-black text-white">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">
                 {isViewOnly ? 'Viewing profile history.' : 'Detailed growth view.'}
               </DialogDescription>
@@ -479,10 +480,10 @@ export default function MemberRegistry() {
       </Dialog>
 
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => { if(!open) { setMemberToDelete(null); unlockUI(); } }}>
-        <AlertDialogContent className="rounded-[2rem] border-white/10">
+        <AlertDialogContent className="rounded-[2rem] border-white/10 bg-card">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
-            <AlertDialogDescription className="font-medium">
+            <AlertDialogTitle className="text-xl font-black text-white">Delete Member?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium text-muted-foreground">
               Are you sure you want to remove {memberToDelete?.name}?
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -508,14 +509,14 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           value={formData.name} 
           onChange={e => setFormData({ ...formData, name: e.target.value })} 
           placeholder="Name" 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
+          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold text-white"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Status</Label>
-          <select disabled={isViewOnly} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none">
+          <select disabled={isViewOnly} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none text-white">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
@@ -531,7 +532,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           value={formData.characteristics} 
           onChange={e => setFormData({ ...formData, characteristics: e.target.value })} 
           placeholder="Detailed traits, introversion/extroversion, spiritual history, etc." 
-          className="min-h-[100px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-bold"
+          className="min-h-[100px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-bold text-white"
         />
       </div>
 
@@ -573,7 +574,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
           placeholder="Comma separated goals..." 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
+          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold text-white"
         />
       </div>
 
@@ -587,7 +588,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
           onKeyDown={handleNotesKeyDown}
           placeholder="Add growth observations... (Press Enter for auto-bullets)" 
-          className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium"
+          className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium text-white"
         />
       </div>
     </div>
@@ -605,12 +606,12 @@ function MemberActions({ member, currentUser, onEdit, onOpen, onDelete, onChange
           <MoreHorizontal className="size-7" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5">
-        <DropdownMenuItem onClick={onOpen} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
+      <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5 bg-card">
+        <DropdownMenuItem onClick={onOpen} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all text-white">
           <Eye className="size-5" /> 
           <span className="font-bold">View Card</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
+        <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all text-white">
           <Edit className="size-5" /> 
           <span className="font-bold">Edit Profile</span>
         </DropdownMenuItem>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo } from 'react';
@@ -100,10 +99,10 @@ export default function AttendancePage() {
       <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-24 sm:pb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-headline font-bold">Cell Attendance</h1>
+            <h1 className="text-2xl sm:text-3xl font-headline font-bold text-white">Cell Attendance</h1>
             <p className="text-sm text-muted-foreground">Track who attended your group sessions.</p>
           </div>
-          <Button variant="outline" onClick={handleExport} className="gap-2 h-12 rounded-2xl font-bold border-white/5">
+          <Button variant="outline" onClick={handleExport} className="gap-2 h-12 rounded-2xl font-bold border-white/5 active:scale-95 transition-all">
             <Download className="size-4" />
             Export to Excel
           </Button>
@@ -113,17 +112,17 @@ export default function AttendancePage() {
           <Card className="lg:col-span-2 glass-card rounded-[2rem] border-white/5 shadow-2xl overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between bg-secondary/10 border-b border-white/5 p-6 sm:p-8">
               <div className="space-y-1">
-                <CardTitle className="text-xl font-black">Mark Presence</CardTitle>
+                <CardTitle className="text-xl font-black text-white">Mark Presence</CardTitle>
                 <CardDescription>Select members present today.</CardDescription>
               </div>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="secondary" className="gap-2 h-12 rounded-xl font-bold px-4">
+                  <Button variant="secondary" className="gap-2 h-12 rounded-xl font-bold px-4 active:scale-95">
                     <CalendarIcon className="size-4" />
                     {format(date, 'PP')}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-2xl overflow-hidden shadow-2xl border-white/10" align="end">
+                <PopoverContent className="w-screen max-w-[320px] sm:w-auto p-0 rounded-2xl overflow-hidden shadow-2xl border-white/10 bg-card" align="end">
                   <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
                 </PopoverContent>
               </Popover>
@@ -166,13 +165,13 @@ export default function AttendancePage() {
                 </div>
               </ScrollArea>
               <div className="p-6 sm:p-8 bg-secondary/10 border-t border-white/5 flex justify-between items-center">
-                <div className="text-sm font-bold">
+                <div className="text-sm font-bold text-muted-foreground">
                   <span className="text-accent">{presentIds.length}</span> / {members?.length || 0} Present
                 </div>
                 <Button 
                   onClick={handleSaveAttendance} 
                   disabled={isSubmitting || presentIds.length === 0}
-                  className="gap-2 h-14 rounded-2xl px-8 font-black shadow-xl shadow-primary/20"
+                  className="gap-2 h-14 rounded-2xl px-8 font-black shadow-xl shadow-primary/20 active:scale-95 transition-all"
                 >
                   <Save className="size-5" />
                   Save Record
@@ -190,7 +189,7 @@ export default function AttendancePage() {
                     {pastAttendance.slice(0, 5).map((record: any) => (
                       <div key={record.id} className="p-5 hover:bg-secondary/10 transition-colors space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-black">{format(new Date(record.date), 'MMM d, yyyy')}</span>
+                          <span className="text-xs font-black text-white">{format(new Date(record.date), 'MMM d, yyyy')}</span>
                           <Badge variant="secondary" className="text-[9px] h-5 px-2 font-bold rounded-md">
                             {record.presentMemberIds.length} Present
                           </Badge>

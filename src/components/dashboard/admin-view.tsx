@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock, Fingerprint, Eye } from 'lucide-react';
@@ -106,8 +105,10 @@ export function AdminDashboard() {
 
   const unlockUI = () => {
     setTimeout(() => {
-      document.body.style.pointerEvents = 'auto';
-      document.body.style.overflow = 'auto';
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+      }
     }, 300);
   };
 
@@ -207,14 +208,14 @@ export function AdminDashboard() {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-20 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-headline font-bold">Overview</h1>
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold text-white">Overview</h1>
           <p className="text-sm text-muted-foreground">Monitoring progress.</p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input 
             placeholder="Search..." 
-            className="pl-9 bg-secondary/20 h-11 rounded-xl"
+            className="pl-9 bg-secondary/20 h-11 rounded-xl text-white border-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -243,7 +244,7 @@ export function AdminDashboard() {
                           <User className="size-6 text-accent" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-bold text-base sm:text-lg truncate tracking-tight">{leader.name}</h3>
+                          <h3 className="font-bold text-base sm:text-lg truncate tracking-tight text-white">{leader.name}</h3>
                           <Badge variant="secondary" className="h-4 text-[9px] px-1.5 rounded-md font-bold">{leaderMembers.length} Members</Badge>
                         </div>
                       </div>
@@ -256,18 +257,18 @@ export function AdminDashboard() {
                         <Table>
                           <TableHeader className="bg-secondary/10">
                             <TableRow className="border-white/5">
-                              <TableHead className="w-[200px] font-bold py-4 pl-8">Member</TableHead>
-                              <TableHead className="font-bold">Status</TableHead>
-                              <TableHead className="font-bold">Growth</TableHead>
-                              <TableHead className="font-bold">Targets</TableHead>
-                              <TableHead className="font-bold">Notes</TableHead>
-                              <TableHead className="text-right font-bold pr-8">Action</TableHead>
+                              <TableHead className="w-[200px] font-bold py-4 pl-8 text-muted-foreground">Member</TableHead>
+                              <TableHead className="font-bold text-muted-foreground">Status</TableHead>
+                              <TableHead className="font-bold text-muted-foreground">Growth</TableHead>
+                              <TableHead className="font-bold text-muted-foreground">Targets</TableHead>
+                              <TableHead className="font-bold text-muted-foreground">Notes</TableHead>
+                              <TableHead className="text-right font-bold pr-8 text-muted-foreground">Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {leaderMembers.map(member => (
                               <TableRow key={member.id} onClick={() => handleOpenCard(member, true)} className="hover:bg-secondary/5 transition-colors border-white/5 cursor-pointer">
-                                <TableCell className="font-bold text-sm pl-8">{member.name}</TableCell>
+                                <TableCell className="font-bold text-sm pl-8 text-white">{member.name}</TableCell>
                                 <TableCell><Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[9px] px-2 py-0 h-5 font-bold rounded-lg">{member.status}</Badge></TableCell>
                                 <TableCell>
                                   <div className="flex gap-1">
@@ -285,9 +286,9 @@ export function AdminDashboard() {
                                         <MoreHorizontal className="size-5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10">
-                                      <DropdownMenuItem onClick={() => handleOpenCard(member, true)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold"><Eye className="size-4" /> View Card</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleOpenCard(member, false)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold"><Edit className="size-4" /> Edit Profile</DropdownMenuItem>
+                                    <DropdownMenuContent align="end" className="rounded-[1.25rem] border shadow-2xl p-2 w-48 border-white/10 bg-card">
+                                      <DropdownMenuItem onClick={() => handleOpenCard(member, true)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold text-white"><Eye className="size-4" /> View Card</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleOpenCard(member, false)} className="gap-2.5 p-3 cursor-pointer rounded-xl font-bold text-white"><Edit className="size-4" /> Edit Profile</DropdownMenuItem>
                                       <DropdownMenuSeparator className="mx-2 opacity-50" />
                                       <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="gap-2.5 p-3 text-destructive cursor-pointer rounded-xl font-bold"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -320,14 +321,14 @@ export function AdminDashboard() {
                   {activityLogs.map((log) => (
                     <div key={log.id} className="p-5 hover:bg-secondary/10 transition-colors space-y-2">
                       <div className="flex justify-between items-start gap-2">
-                        <p className="text-xs font-black tracking-tight leading-tight">
+                        <p className="text-xs font-black tracking-tight leading-tight text-white">
                           <span className="text-accent">{log.actorName}</span>
                           <span className="text-muted-foreground font-medium mx-1.5">
                             {log.action === 'create' ? 'enrolled' : log.action === 'update' ? 'updated' : 'removed'}
                           </span>
                           <span className="text-foreground">{log.targetName}</span>
                         </p>
-                        <Badge variant="outline" className="text-[8px] h-4 py-0 font-bold opacity-50 uppercase tracking-tighter">
+                        <Badge variant="outline" className="text-[8px] h-4 py-0 font-bold opacity-50 uppercase tracking-tighter text-muted-foreground">
                           {log.action}
                         </Badge>
                       </div>
@@ -347,10 +348,10 @@ export function AdminDashboard() {
       </div>
 
       <Dialog open={!!editingMember} onOpenChange={(open) => { if(!open) { setEditingMember(null); unlockUI(); } }}>
-        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] overflow-y-auto max-h-[90vh] p-0 border-white/10 shadow-2xl">
+        <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] overflow-y-auto max-h-[90vh] p-0 border-white/10 shadow-2xl bg-card">
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
+              <DialogTitle className="text-2xl font-black text-white">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
               <DialogDescription className="text-muted-foreground font-medium">
                 {isViewOnly ? 'Reviewing progress and targets.' : 'Full progress history.'}
               </DialogDescription>
@@ -358,14 +359,14 @@ export function AdminDashboard() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Full Name</Label>
-                <Input readOnly={isViewOnly} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none" />
+                <Input readOnly={isViewOnly} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none text-white font-bold" />
               </div>
               
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase tracking-widest font-black text-accent flex items-center gap-2">
                   <Fingerprint className="size-3" /> Characteristics
                 </Label>
-                <Input readOnly={isViewOnly} value={formData.characteristics} onChange={e => setFormData({ ...formData, characteristics: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none" />
+                <Input readOnly={isViewOnly} value={formData.characteristics} onChange={e => setFormData({ ...formData, characteristics: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none text-white font-bold" />
               </div>
 
               <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
@@ -379,12 +380,12 @@ export function AdminDashboard() {
                         disabled={isViewOnly}
                         className={cn(
                           "flex items-center justify-between p-4 rounded-2xl transition-all border", 
-                          isActive ? "bg-primary text-primary-foreground" : "bg-secondary/10 border-white/5",
+                          isActive ? "bg-primary text-primary-foreground" : "bg-secondary/10 border-white/5 text-muted-foreground",
                           isViewOnly && "opacity-80"
                         )} 
                         onClick={() => toggleSOL(stage)}
                       >
-                        <span className="text-xs font-black uppercase">{stage}</span>
+                        <span className="text-xs font-black uppercase tracking-tighter">{stage}</span>
                         {isActive ? <Check className="size-4" /> : <div className="size-4 rounded-full border border-white/20" />}
                       </button>
                     );
@@ -392,8 +393,8 @@ export function AdminDashboard() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-widest font-black">Progress Notes</Label>
-                <Textarea readOnly={isViewOnly} value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} className="min-h-[140px] bg-secondary/20 rounded-2xl border-none" />
+                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Progress Notes</Label>
+                <Textarea readOnly={isViewOnly} value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} className="min-h-[140px] bg-secondary/20 rounded-2xl border-none text-white" />
               </div>
             </div>
           </div>
@@ -409,10 +410,10 @@ export function AdminDashboard() {
       </Dialog>
 
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => { if(!open) { setMemberToDelete(null); unlockUI(); } }}>
-        <AlertDialogContent className="rounded-[2rem] border-white/10">
+        <AlertDialogContent className="rounded-[2rem] border-white/10 bg-card">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black">Delete Member?</AlertDialogTitle>
-            <AlertDialogDescription className="font-medium">Remove {memberToDelete?.name} permanently.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-black text-white">Delete Member?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium text-muted-foreground">Remove {memberToDelete?.name} permanently.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="rounded-xl border-white/5 h-12">Cancel</AlertDialogCancel>
@@ -436,7 +437,7 @@ function StatCard({ title, value, label, icon: Icon }: any) {
         </div>
       </CardHeader>
       <CardContent className="p-6 sm:p-8 pt-0">
-        <div className="text-4xl font-black tracking-tighter">{value}</div>
+        <div className="text-4xl font-black tracking-tighter text-white">{value}</div>
         <p className="text-[10px] text-muted-foreground mt-1.5 font-bold uppercase tracking-widest">{label}</p>
       </CardContent>
     </Card>
