@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Fingerprint } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Fingerprint, Eye } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,7 @@ export default function MemberRegistry() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,9 +100,10 @@ export default function MemberRegistry() {
       characteristics: ''
     });
     setEditingMember(null);
+    setIsViewOnly(false);
   }, []);
 
-  const openEditModal = (member: any) => {
+  const openCard = (member: any, viewOnly: boolean = true) => {
     setFormData({
       name: member.name || '',
       status: member.status || 'Active',
@@ -111,6 +113,7 @@ export default function MemberRegistry() {
       remarks: member.remarks || '',
       characteristics: member.characteristics || ''
     });
+    setIsViewOnly(viewOnly);
     setEditingMember(member);
   };
 
@@ -245,6 +248,7 @@ export default function MemberRegistry() {
   };
 
   const toggleSOL = (stage: string) => {
+    if (isViewOnly) return;
     setFormData(prev => ({
       ...prev,
       ladderOfSuccess: prev.ladderOfSuccess.includes(stage)
@@ -254,20 +258,16 @@ export default function MemberRegistry() {
   };
 
   const handleNotesKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isViewOnly) return;
     if (e.key === 'Enter') {
       const textarea = e.currentTarget;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const value = textarea.value;
       
-      // Auto-bullet logic
       const newValue = value.substring(0, start) + "\n• " + value.substring(end);
       setFormData(prev => ({ ...prev, remarks: newValue }));
-      
-      // Prevent default Enter behavior
       e.preventDefault();
-      
-      // Set cursor position after the bullet
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
@@ -342,7 +342,7 @@ export default function MemberRegistry() {
                         <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground animate-pulse">Loading members...</TableCell></TableRow>
                       ) : filteredMembers.length > 0 ? (
                         filteredMembers.map((member: any) => (
-                          <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors border-white/5 cursor-pointer" onClick={() => openEditModal(member)}>
+                          <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors border-white/5 cursor-pointer" onClick={() => openCard(member, true)}>
                             <TableCell className="pl-8">
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center border border-white/5 shadow-inner">
@@ -368,7 +368,8 @@ export default function MemberRegistry() {
                               <MemberActions 
                                 member={member} 
                                 currentUser={currentUser} 
-                                onEdit={() => openEditModal(member)} 
+                                onEdit={() => openCard(member, false)} 
+                                onOpen={() => openCard(member, true)}
                                 onDelete={() => setMemberToDelete(member)}
                                 onChangeRole={handleChangeRole}
                               />
@@ -390,7 +391,7 @@ export default function MemberRegistry() {
                 <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading members...</div>
               ) : filteredMembers.length > 0 ? (
                 filteredMembers.map((member: any) => (
-                  <div key={member.id} onClick={() => openEditModal(member)} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all active:scale-95">
+                  <div key={member.id} onClick={() => openCard(member, true)} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all active:scale-95">
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex gap-4 min-w-0">
                         <div className="h-14 w-14 rounded-2xl bg-secondary flex items-center justify-center border border-white/5 shrink-0 shadow-lg">
@@ -405,7 +406,8 @@ export default function MemberRegistry() {
                         <MemberActions 
                           member={member} 
                           currentUser={currentUser} 
-                          onEdit={() => openEditModal(member)} 
+                          onEdit={() => openCard(member, false)} 
+                          onOpen={() => openCard(member, true)}
                           onDelete={() => setMemberToDelete(member)}
                           onChangeRole={handleChangeRole}
                         />
@@ -443,7 +445,7 @@ export default function MemberRegistry() {
               <DialogTitle className="text-2xl font-black">Add Member</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">Enroll a new person.</DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={false} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
@@ -458,16 +460,20 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">Member Card</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Detailed growth view.</DialogDescription>
+              <DialogTitle className="text-2xl font-black">{isViewOnly ? 'Member View' : 'Member Card'}</DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">
+                {isViewOnly ? 'Viewing profile history.' : 'Detailed growth view.'}
+              </DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={isViewOnly} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Close</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+            {!isViewOnly && (
+              <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember} disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -492,12 +498,13 @@ export default function MemberRegistry() {
   );
 }
 
-function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAdmin }: any) {
+function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAdmin, isViewOnly }: any) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Full Name</Label>
         <Input 
+          readOnly={isViewOnly}
           value={formData.name} 
           onChange={e => setFormData({ ...formData, name: e.target.value })} 
           placeholder="Name" 
@@ -508,7 +515,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Status</Label>
-          <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none">
+          <select disabled={isViewOnly} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MemberStatus })} className="h-14 bg-secondary/20 rounded-2xl border-none text-base font-bold px-4 w-full appearance-none">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
@@ -520,6 +527,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           <Fingerprint className="size-4" /> Characteristics
         </Label>
         <Textarea 
+          readOnly={isViewOnly}
           value={formData.characteristics} 
           onChange={e => setFormData({ ...formData, characteristics: e.target.value })} 
           placeholder="Detailed traits, introversion/extroversion, spiritual history, etc." 
@@ -538,11 +546,13 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
               <button 
                 key={stage} 
                 type="button"
+                disabled={isViewOnly}
                 className={cn(
                   "flex items-center justify-between p-4 rounded-2xl transition-all border text-left",
                   isActive 
                     ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
-                    : "bg-secondary/10 border-white/5 text-muted-foreground"
+                    : "bg-secondary/10 border-white/5 text-muted-foreground",
+                  isViewOnly && "opacity-80"
                 )} 
                 onClick={() => toggleSOL(stage)}
               >
@@ -559,6 +569,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           <ClipboardList className="size-4" /> Active Goals
         </Label>
         <Input 
+          readOnly={isViewOnly}
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
           placeholder="Comma separated goals..." 
@@ -571,6 +582,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           <StickyNote className="size-4" /> Progress Notes
         </Label>
         <Textarea 
+          readOnly={isViewOnly}
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
           onKeyDown={handleNotesKeyDown}
@@ -582,7 +594,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
   );
 }
 
-function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: any) {
+function MemberActions({ member, currentUser, onEdit, onOpen, onDelete, onChangeRole }: any) {
   const isAdmin = currentUser?.role === 'Admin';
   const isLeader = currentUser?.role === 'Leader';
   
@@ -594,9 +606,13 @@ function MemberActions({ member, currentUser, onEdit, onDelete, onChangeRole }: 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 rounded-[1.75rem] border border-white/10 shadow-2xl p-2.5">
+        <DropdownMenuItem onClick={onOpen} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
+          <Eye className="size-5" /> 
+          <span className="font-bold">View Card</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onEdit} className="gap-3 p-4 rounded-xl cursor-pointer hover:bg-secondary transition-all">
           <Edit className="size-5" /> 
-          <span className="font-bold">Edit</span>
+          <span className="font-bold">Edit Profile</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator className="mx-2 opacity-50" />
