@@ -1,9 +1,10 @@
+
 "use client"
 
 import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { User, Settings, LogOut, ChevronDown, LayoutDashboard, Users } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, LayoutDashboard, Users, CalendarCheck } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Optimized auth guard: Only redirect if fully initialized and no user is found
   React.useEffect(() => {
     if (isInitialized && !user && !isLoading) {
       router.push('/');
@@ -39,7 +39,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return 'Cell Member';
   };
 
-  // Improved loading state: Don't show a blocker if we're just restoring session offline
   if (!isInitialized || (isLoading && !user)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
@@ -51,7 +50,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If we're on the login page, don't wrap in shell
   if (pathname === '/') return <>{children}</>;
 
   const navigation = [
@@ -67,6 +65,12 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       url: "/members",
       roles: ["Admin", "Leader"],
     },
+    {
+      title: "Attendance",
+      icon: CalendarCheck,
+      url: "/attendance",
+      roles: ["Admin", "Leader"],
+    },
   ];
 
   const filteredNav = navigation.filter(item => 
@@ -77,7 +81,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-40 flex h-20 shrink-0 items-center border-b bg-background/80 backdrop-blur-md px-4 sm:px-8 transition-all duration-300">
         <div className="flex items-center gap-6 sm:gap-10 w-full max-w-7xl mx-auto">
-          {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="bg-primary text-primary-foreground h-10 w-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-primary/20 group-active:scale-95 transition-all">
               CGT
@@ -85,7 +88,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             <span className="text-xl font-headline font-black tracking-tighter hidden sm:block italic">Cell Group Tracker</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {filteredNav.map((item) => {
               const isActive = pathname === item.url;
@@ -160,7 +162,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      {/* Mobile Navigation Bar (Bottom) */}
       <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] glass-card rounded-[2.5rem] p-2 flex items-center justify-around z-50 shadow-2xl border-white/10 backdrop-blur-2xl">
         {filteredNav.map((item) => {
           const isActive = pathname === item.url;
@@ -169,7 +170,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               key={item.title} 
               href={item.url}
               className={cn(
-                "flex flex-col items-center gap-1 px-6 py-3 rounded-[2rem] transition-all active:scale-90",
+                "flex flex-col items-center gap-1 px-4 py-3 rounded-[2rem] transition-all active:scale-90",
                 isActive 
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-105" 
                   : "text-muted-foreground"

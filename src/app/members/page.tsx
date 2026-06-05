@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Fingerprint } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserRole, MemberStatus, SOL_STAGES } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -67,7 +66,8 @@ export default function MemberRegistry() {
     role: 'Member' as UserRole,
     ladderOfSuccess: [] as string[],
     targetToDo: '',
-    remarks: ''
+    remarks: '',
+    characteristics: ''
   });
 
   const db = useFirestore();
@@ -95,7 +95,8 @@ export default function MemberRegistry() {
       role: 'Member',
       ladderOfSuccess: [],
       targetToDo: '',
-      remarks: ''
+      remarks: '',
+      characteristics: ''
     });
     setEditingMember(null);
   }, []);
@@ -107,7 +108,8 @@ export default function MemberRegistry() {
       role: member.role || 'Member',
       ladderOfSuccess: member.ladderOfSuccess || [],
       targetToDo: (member.targetToDo || []).join(', '),
-      remarks: member.remarks || ''
+      remarks: member.remarks || '',
+      characteristics: member.characteristics || ''
     });
     setEditingMember(member);
   };
@@ -251,6 +253,27 @@ export default function MemberRegistry() {
     }));
   };
 
+  const handleNotesKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      
+      // Auto-bullet logic
+      const newValue = value.substring(0, start) + "\n• " + value.substring(end);
+      setFormData(prev => ({ ...prev, remarks: newValue }));
+      
+      // Prevent default Enter behavior
+      e.preventDefault();
+      
+      // Set cursor position after the bullet
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 3;
+      }, 0);
+    }
+  };
+
   if (currentUser && currentUser.role === 'Member') {
     return (
       <LayoutShell>
@@ -319,7 +342,7 @@ export default function MemberRegistry() {
                         <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground animate-pulse">Loading members...</TableCell></TableRow>
                       ) : filteredMembers.length > 0 ? (
                         filteredMembers.map((member: any) => (
-                          <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors border-white/5">
+                          <TableRow key={member.id} className="hover:bg-secondary/10 transition-colors border-white/5 cursor-pointer" onClick={() => openEditModal(member)}>
                             <TableCell className="pl-8">
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center border border-white/5 shadow-inner">
@@ -341,7 +364,7 @@ export default function MemberRegistry() {
                             <TableCell className="max-w-[200px] truncate text-muted-foreground text-[11px] font-medium italic">
                               {member.remarks || '-'}
                             </TableCell>
-                            <TableCell className="text-right pr-8">
+                            <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
                               <MemberActions 
                                 member={member} 
                                 currentUser={currentUser} 
@@ -367,7 +390,7 @@ export default function MemberRegistry() {
                 <div className="py-24 text-center text-muted-foreground italic animate-pulse">Loading members...</div>
               ) : filteredMembers.length > 0 ? (
                 filteredMembers.map((member: any) => (
-                  <div key={member.id} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all">
+                  <div key={member.id} onClick={() => openEditModal(member)} className="p-6 rounded-[2.25rem] border border-white/5 bg-secondary/10 space-y-5 transition-all active:scale-95">
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex gap-4 min-w-0">
                         <div className="h-14 w-14 rounded-2xl bg-secondary flex items-center justify-center border border-white/5 shrink-0 shadow-lg">
@@ -378,13 +401,15 @@ export default function MemberRegistry() {
                           <Badge variant={member.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] h-5 mt-1.5 font-bold px-2.5 rounded-lg">{member.status || 'Active'}</Badge>
                         </div>
                       </div>
-                      <MemberActions 
-                        member={member} 
-                        currentUser={currentUser} 
-                        onEdit={() => openEditModal(member)} 
-                        onDelete={() => setMemberToDelete(member)}
-                        onChangeRole={handleChangeRole}
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <MemberActions 
+                          member={member} 
+                          currentUser={currentUser} 
+                          onEdit={() => openEditModal(member)} 
+                          onDelete={() => setMemberToDelete(member)}
+                          onChangeRole={handleChangeRole}
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-5 pt-5 border-t border-white/5">
@@ -418,7 +443,7 @@ export default function MemberRegistry() {
               <DialogTitle className="text-2xl font-black">Add Member</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">Enroll a new person.</DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
@@ -433,13 +458,13 @@ export default function MemberRegistry() {
         <DialogContent className="sm:max-w-lg w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-white/10 shadow-2xl">
           <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black">Edit Member</DialogTitle>
-              <DialogDescription className="font-medium text-muted-foreground">Update progress.</DialogDescription>
+              <DialogTitle className="text-2xl font-black">Member Card</DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">Detailed growth view.</DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} isAdmin={currentUser?.role === 'Admin'} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
-            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Cancel</Button>
+            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Close</Button>
             <Button className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={handleUpdateMember} disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
@@ -467,7 +492,7 @@ export default function MemberRegistry() {
   );
 }
 
-function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
+function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAdmin }: any) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -488,6 +513,18 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
             <option value="Inactive">Inactive</option>
           </select>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
+          <Fingerprint className="size-4" /> Characteristics
+        </Label>
+        <Input 
+          value={formData.characteristics} 
+          onChange={e => setFormData({ ...formData, characteristics: e.target.value })} 
+          placeholder="e.g. Introvert, Dedicated, Musical" 
+          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
+        />
       </div>
 
       <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
@@ -524,7 +561,7 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         <Input 
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="" 
+          placeholder="Comma separated goals..." 
           className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold"
         />
       </div>
@@ -536,7 +573,8 @@ function MemberForm({ formData, setFormData, toggleSOL, isAdmin }: any) {
         <Textarea 
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          placeholder="Add growth observations..." 
+          onKeyDown={handleNotesKeyDown}
+          placeholder="Add growth observations... (Bullets auto-add on Enter)" 
           className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium"
         />
       </div>

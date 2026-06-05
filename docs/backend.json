@@ -55,6 +55,20 @@
       },
       "required": ["name", "role"]
     },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Record of member attendance for a cell group meeting.",
+      "type": "object",
+      "properties": {
+        "leaderId": { "type": "string" },
+        "leaderName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "presentMemberIds": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["leaderId", "date", "presentMemberIds"]
+    },
     "ActivityLog": {
       "title": "Activity Log",
       "description": "Record of actions performed by leaders on member data.",
@@ -78,6 +92,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/backend/entities/User" },
       "description": "Main collection for user profiles and member records."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/backend/entities/Attendance" },
+      "description": "Records of cell group attendance sessions."
     },
     "/activityLogs/{logId}": {
       "schema": { "$ref": "#/backend/entities/ActivityLog" },

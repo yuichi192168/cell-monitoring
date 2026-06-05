@@ -32,22 +32,25 @@ service cloud.firestore {
 
       allow list: if isAuthenticated();
 
-      allow create: if isAuthenticated() && (
-        isAdmin() ||
-        isOwner(userId) ||
-        (isLeader() && request.resource.data.assignedLeaderId == request.auth.uid)
-      );
+      allow create: if isAuthenticated();
 
       allow update: if isAuthenticated() && (
         isAdmin() ||
         isOwner(userId) ||
-        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+        (isLeader() && (resource.data.assignedLeaderId == request.auth.uid || request.resource.data.assignedLeaderId == request.auth.uid))
       );
 
       allow delete: if isAuthenticated() && (
         isAdmin() ||
         (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
       );
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated() && (isAdmin() || isLeader());
+      allow create: if isAuthenticated() && (isAdmin() || isLeader());
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && resource.data.leaderId == request.auth.uid));
+      allow delete: if isAdmin();
     }
 
     match /activityLogs/{logId} {

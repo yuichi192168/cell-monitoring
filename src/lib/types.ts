@@ -30,6 +30,16 @@ export interface User {
   createdAt?: string;
 }
 
+export interface Attendance {
+  id?: string;
+  leaderId: string;
+  leaderName: string;
+  date: string;
+  presentMemberIds: string[];
+  notes?: string;
+  timestamp: string;
+}
+
 export interface AppStats {
   totalUsers: number;
   totalCellMembers: number;

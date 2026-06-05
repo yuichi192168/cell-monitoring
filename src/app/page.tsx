@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -7,11 +8,21 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Target, LogIn, UserPlus, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { Shield, Users, Target, LogIn, UserPlus, Mail, Lock, User as UserIcon, HelpCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorMessage } from '@/lib/utils';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from '@/components/ui/dialog';
 
 export default function AuthPage() {
   const { login, register, user, isLoading } = useAuth();
@@ -22,6 +33,9 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   React.useEffect(() => {
     if (user && !isLoading) {
@@ -49,12 +63,33 @@ export default function AuthPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Defaulting to 'Leader' (Cell Leader) as requested
       await register(email, password, name, 'Leader');
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Registration Failed",
+        description: getFriendlyErrorMessage(error),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) return;
+    setIsSubmitting(true);
+    try {
+      const { auth } = initializeFirebase();
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: "Reset Email Sent",
+        description: "Please check your inbox for the link.",
+      });
+      setIsResetOpen(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
         description: getFriendlyErrorMessage(error),
       });
     } finally {
@@ -124,7 +159,16 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password">Password</Label>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsResetOpen(true)}
+                        className="text-[10px] text-accent font-bold hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                       <Input 
@@ -212,6 +256,32 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+        <DialogContent className="rounded-3xl border-white/5">
+          <DialogHeader>
+            <DialogTitle className="font-black text-2xl">Reset Password</DialogTitle>
+            <DialogDescription>
+              We will send you an email with a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Email Address</Label>
+              <Input 
+                placeholder="your@email.com" 
+                value={resetEmail} 
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="h-12 rounded-xl bg-secondary/30"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResetOpen(false)} className="rounded-xl h-12">Cancel</Button>
+            <Button onClick={handleResetPassword} disabled={isSubmitting} className="rounded-xl h-12 font-bold">Send Link</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
