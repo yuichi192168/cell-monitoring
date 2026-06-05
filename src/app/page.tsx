@@ -86,7 +86,6 @@ export default function AuthPage() {
       const { auth, db } = initializeFirebase();
       
       // Security: Check if user exists in our Firestore first
-      // Note: We use a limit(1) query to satisfy security rules for unauthenticated listing
       const userRef = collection(db, 'users');
       const q = query(userRef, where('email', '==', resetEmail), limit(1));
       
@@ -103,7 +102,6 @@ export default function AuthPage() {
         }
       } catch (permissionErr) {
         // Fallback: If rules still block, just proceed with Firebase default reset
-        // which handles non-existent emails silently for security anyway.
         console.warn("Permission check skipped during reset flow.");
       }
 
@@ -127,15 +125,35 @@ export default function AuthPage() {
   const handleCompleteReset = async () => {
     if (!resetToken || !newPassword) return;
     setIsSubmitting(true);
+    
+    // Capture email before clearing state
+    const targetEmail = resetEmail;
+    const targetPassword = newPassword;
+
     try {
       const { auth } = initializeFirebase();
-      await confirmPasswordReset(auth, resetToken, newPassword);
-      toast({
-        title: "Password Updated",
-        description: "Your security credentials have been successfully reset. You can now sign in.",
-      });
+      await confirmPasswordReset(auth, resetToken, targetPassword);
+      
+      // Close modal and reset modal specific states
       setIsResetOpen(false);
       setResetStep('email');
+      setResetToken('');
+      setNewPassword('');
+
+      // Attempt automatic login
+      try {
+        await login(targetEmail, targetPassword);
+        toast({
+          title: "Account Recovered",
+          description: "Your password was reset and you've been signed in automatically.",
+        });
+      } catch (loginErr) {
+        // If auto-login fails for some reason, just show success for the reset
+        toast({
+          title: "Password Updated",
+          description: "Your security credentials have been successfully reset. You can now sign in.",
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
