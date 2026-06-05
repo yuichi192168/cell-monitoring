@@ -11,7 +11,7 @@ import { useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { User as UserIcon, Mail, Shield, Calendar, Activity, Lock, Save, Camera } from 'lucide-react';
+import { User as UserIcon, Mail, Shield, Calendar, Activity, Lock, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -23,13 +23,19 @@ import {
   DialogFooter 
 } from '@/components/ui/dialog';
 import { getFriendlyErrorMessage } from '@/lib/utils';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 export default function SettingsPage() {
   const { user: authUser } = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
   
-  const userRef = authUser ? doc(db, 'users', authUser.id) : null;
+  // Stabilize the document reference to prevent infinite render loops
+  const userRef = useMemoFirebase(() => {
+    if (!authUser?.id) return null;
+    return doc(db, 'users', authUser.id);
+  }, [db, authUser?.id]);
+
   const { data: userData, loading } = useDoc(userRef);
 
   const [name, setName] = useState('');
@@ -152,9 +158,6 @@ export default function SettingsPage() {
                   <div className="h-24 w-24 rounded-full bg-secondary border border-border flex items-center justify-center mx-auto overflow-hidden">
                     <UserIcon className="size-10 text-muted-foreground" />
                   </div>
-                  <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-lg border">
-                    <Camera className="size-4" />
-                  </Button>
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-bold text-lg">{userData.name}</h3>
