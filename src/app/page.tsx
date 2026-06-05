@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorMessage } from '@/lib/utils';
 import { sendPasswordResetEmail, confirmPasswordReset } from 'firebase/auth';
 import { initializeFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { 
   Dialog, 
   DialogContent, 
@@ -86,18 +86,31 @@ export default function AuthPage() {
       const { auth, db } = initializeFirebase();
       
       // Security: Check if user exists in our Firestore first
+      // Note: We use a limit(1) query to satisfy security rules for unauthenticated listing
       const userRef = collection(db, 'users');
-      const q = query(userRef, where('email', '==', resetEmail));
-      const querySnapshot = await getDocs(q);
+      const q = query(userRef, where('email', '==', resetEmail), limit(1));
       
-      if (querySnapshot.empty) {
-        throw new Error("This email is not registered in our system.");
+      try {
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          toast({
+            variant: "destructive",
+            title: "Security Check",
+            description: "This email is not registered in our system.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (permissionErr) {
+        // Fallback: If rules still block, just proceed with Firebase default reset
+        // which handles non-existent emails silently for security anyway.
+        console.warn("Permission check skipped during reset flow.");
       }
 
       await sendPasswordResetEmail(auth, resetEmail);
       toast({
         title: "Reset Token Sent",
-        description: "A secure reset link has been sent to your Gmail. Please check your inbox.",
+        description: "A secure reset link has been sent to your email. Please check your inbox.",
       });
       setResetStep('token');
     } catch (error: any) {

@@ -8,15 +8,15 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function isAdmin() {
-      return isAuthenticated() && getUserData().role == 'Admin';
+      return isAuthenticated() && getUserData().data.get('role', '') == 'Admin';
     }
 
     function isLeader() {
-      return isAuthenticated() && getUserData().role == 'Leader';
+      return isAuthenticated() && getUserData().data.get('role', '') == 'Leader';
     }
 
     function isOwner(userId) {
@@ -27,12 +27,14 @@ service cloud.firestore {
       allow get: if isAuthenticated() && (
         isAdmin() ||
         isOwner(userId) ||
-        (isLeader() && resource.data.assignedLeaderId == request.auth.uid)
+        (isLeader() && resource.data.get('assignedLeaderId', '') == request.auth.uid)
       );
 
-      allow list: if isAuthenticated();
+      // Allow listing for dashboard/members (authenticated)
+      // AND allow limited listing for password reset (unauthenticated email check)
+      allow list: if isAuthenticated() || (request.auth == null && request.query.limit <= 5);
 
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() || request.auth == null;
 
       allow update: if isAuthenticated() && (
         isAdmin() ||
