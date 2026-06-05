@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
-import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock, Fingerprint, Eye } from 'lucide-react';
+import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock, Eye } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -64,7 +64,6 @@ export function AdminDashboard() {
     ladderOfSuccess: [] as string[],
     targetToDo: '',
     remarks: '',
-    characteristics: ''
   });
 
   const allUsersQuery = useMemoFirebase(() => {
@@ -120,7 +119,6 @@ export function AdminDashboard() {
       ladderOfSuccess: member.ladderOfSuccess || [],
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || '',
-      characteristics: member.characteristics || ''
     });
     setIsViewOnly(viewOnly);
     setEditingMember(member);
@@ -362,13 +360,6 @@ export function AdminDashboard() {
                 <Input readOnly={isViewOnly} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none text-white font-bold" />
               </div>
               
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-widest font-black text-accent flex items-center gap-2">
-                  <Fingerprint className="size-3" /> Characteristics
-                </Label>
-                <Input readOnly={isViewOnly} value={formData.characteristics} onChange={e => setFormData({ ...formData, characteristics: e.target.value })} className="h-14 bg-secondary/20 rounded-2xl border-none text-white font-bold" />
-              </div>
-
               <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
                 <div className="grid grid-cols-2 gap-3">
                   {SOL_STAGES.map(stage => {

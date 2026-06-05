@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Fingerprint, Eye } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Eye } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +67,6 @@ export default function MemberRegistry() {
     ladderOfSuccess: [] as string[],
     targetToDo: '',
     remarks: '',
-    characteristics: ''
   });
 
   const db = useFirestore();
@@ -100,7 +99,6 @@ export default function MemberRegistry() {
       ladderOfSuccess: [],
       targetToDo: '',
       remarks: '',
-      characteristics: ''
     });
     setEditingMember(null);
     setIsViewOnly(false);
@@ -114,7 +112,6 @@ export default function MemberRegistry() {
       ladderOfSuccess: member.ladderOfSuccess || [],
       targetToDo: (member.targetToDo || []).join(', '),
       remarks: member.remarks || '',
-      characteristics: member.characteristics || ''
     });
     setIsViewOnly(viewOnly);
     setEditingMember(member);
@@ -541,19 +538,6 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
             <option value="Leader">Leader</option>
           </select>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
-          <Fingerprint className="size-4" /> Characteristics
-        </Label>
-        <Textarea 
-          readOnly={isViewOnly}
-          value={formData.characteristics} 
-          onChange={e => setFormData({ ...formData, characteristics: e.target.value })} 
-          placeholder="Detailed traits, introversion/extroversion, spiritual history, etc." 
-          className="min-h-[100px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-bold text-white"
-        />
       </div>
 
       <div className="space-y-4 p-5 rounded-[2rem] bg-secondary/20 border border-white/5">
