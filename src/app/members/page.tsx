@@ -110,7 +110,7 @@ export default function MemberRegistry() {
       status: member.status || 'Active',
       role: member.role || 'Member',
       ladderOfSuccess: member.ladderOfSuccess || [],
-      targetToDo: (member.targetToDo || []).join(', '),
+      targetToDo: (member.targetToDo || []).map((t: string) => `• ${t}`).join('\n'),
       remarks: member.remarks || '',
     });
     setIsViewOnly(viewOnly);
@@ -130,7 +130,7 @@ export default function MemberRegistry() {
     if (!editingMember || !currentUser) return;
     setIsSubmitting(true);
     
-    const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
+    const targets = formData.targetToDo.split('\n').map(t => t.replace(/^•\s*/, '').trim()).filter(Boolean);
     const updatePayload = {
       ...formData,
       targetToDo: targets
@@ -170,7 +170,7 @@ export default function MemberRegistry() {
     if (!currentUser) return;
     setIsSubmitting(true);
 
-    const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
+    const targets = formData.targetToDo.split('\n').map(t => t.replace(/^•\s*/, '').trim()).filter(Boolean);
     const newUser = {
       ...formData,
       targetToDo: targets,
@@ -259,7 +259,7 @@ export default function MemberRegistry() {
     }));
   };
 
-  const handleNotesKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleAutoBulletKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, field: 'remarks' | 'targetToDo') => {
     if (isViewOnly) return;
     if (e.key === 'Enter') {
       const textarea = e.currentTarget;
@@ -268,11 +268,15 @@ export default function MemberRegistry() {
       const value = textarea.value;
       
       const newValue = value.substring(0, start) + "\n• " + value.substring(end);
-      setFormData(prev => ({ ...prev, remarks: newValue }));
+      setFormData(prev => ({ ...prev, [field]: newValue }));
       e.preventDefault();
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
+    }
+    // Handle initial bullet if empty
+    if (e.key !== 'Backspace' && e.key !== 'Delete' && formData[field].length === 0) {
+      setFormData(prev => ({ ...prev, [field]: '• ' + prev[field] }));
     }
   };
 
@@ -456,7 +460,7 @@ export default function MemberRegistry() {
               <DialogTitle className="text-2xl font-black text-white">Add Participant</DialogTitle>
               <DialogDescription className="font-medium text-muted-foreground">Enroll a new member or leader.</DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={false} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleAutoBulletKeyDown={handleAutoBulletKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={false} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
@@ -476,7 +480,7 @@ export default function MemberRegistry() {
                 {isViewOnly ? 'Viewing profile history.' : 'Update participant details.'}
               </DialogDescription>
             </DialogHeader>
-            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleNotesKeyDown={handleNotesKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={isViewOnly} />
+            <MemberForm formData={formData} setFormData={setFormData} toggleSOL={toggleSOL} handleAutoBulletKeyDown={handleAutoBulletKeyDown} isAdmin={currentUser?.role === 'Admin'} isViewOnly={isViewOnly} />
           </div>
           <DialogFooter className="p-6 sm:p-8 pt-2 bg-secondary/10 border-t border-white/5 flex flex-row gap-3">
             <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-white/5 active:scale-95 transition-all" onClick={() => setEditingMember(null)}>Close</Button>
@@ -509,7 +513,7 @@ export default function MemberRegistry() {
   );
 }
 
-function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAdmin, isViewOnly }: any) {
+function MemberForm({ formData, setFormData, toggleSOL, handleAutoBulletKeyDown, isAdmin, isViewOnly }: any) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -573,12 +577,13 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
         <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
           <ClipboardList className="size-4" /> Active Goals
         </Label>
-        <Input 
+        <Textarea 
           readOnly={isViewOnly}
           value={formData.targetToDo} 
           onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
-          placeholder="Comma separated goals..." 
-          className="h-14 bg-secondary/20 rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-accent/50 text-base font-bold text-white"
+          onKeyDown={(e) => handleAutoBulletKeyDown(e, 'targetToDo')}
+          placeholder="List active goals... (Press Enter for auto-bullets)" 
+          className="min-h-[120px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-bold text-white"
         />
       </div>
 
@@ -590,7 +595,7 @@ function MemberForm({ formData, setFormData, toggleSOL, handleNotesKeyDown, isAd
           readOnly={isViewOnly}
           value={formData.remarks} 
           onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
-          onKeyDown={handleNotesKeyDown}
+          onKeyDown={(e) => handleAutoBulletKeyDown(e, 'remarks')}
           placeholder="Add growth observations... (Press Enter for auto-bullets)" 
           className="min-h-[140px] bg-secondary/20 rounded-2xl border-none resize-none p-4 text-base font-medium text-white"
         />

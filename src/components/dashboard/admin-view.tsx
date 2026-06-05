@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
-import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock, Eye } from 'lucide-react';
+import { Users, UserCheck, Activity, Search, MoreHorizontal, Edit, Trash2, User, Check, History, Clock, Eye, ClipboardList, StickyNote } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -117,7 +117,7 @@ export function AdminDashboard() {
       status: member.status || 'Active',
       role: member.role || 'Member',
       ladderOfSuccess: member.ladderOfSuccess || [],
-      targetToDo: (member.targetToDo || []).join(', '),
+      targetToDo: (member.targetToDo || []).map((t: string) => `• ${t}`).join('\n'),
       remarks: member.remarks || '',
     });
     setIsViewOnly(viewOnly);
@@ -128,7 +128,7 @@ export function AdminDashboard() {
     if (!editingMember || !currentUser) return;
     setIsSubmitting(true);
     
-    const targets = formData.targetToDo.split(',').map(t => t.trim()).filter(Boolean);
+    const targets = formData.targetToDo.split('\n').map(t => t.replace(/^•\s*/, '').trim()).filter(Boolean);
     const updatePayload = { ...formData, targetToDo: targets };
 
     const userRef = doc(db, 'users', editingMember.id);
@@ -192,6 +192,23 @@ export function AdminDashboard() {
         ? prev.ladderOfSuccess.filter(s => s !== stage)
         : [...prev.ladderOfSuccess, stage]
     }));
+  };
+
+  const handleAutoBulletKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, field: 'remarks' | 'targetToDo') => {
+    if (isViewOnly) return;
+    if (e.key === 'Enter') {
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      
+      const newValue = value.substring(0, start) + "\n• " + value.substring(end);
+      setFormData(prev => ({ ...prev, [field]: newValue }));
+      e.preventDefault();
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 3;
+      }, 0);
+    }
   };
 
   if (loading) {
@@ -383,9 +400,30 @@ export function AdminDashboard() {
                   })}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-accent uppercase tracking-widest text-[10px] font-black">
+                  <ClipboardList className="size-4" /> Active Goals
+                </Label>
+                <Textarea 
+                  readOnly={isViewOnly}
+                  value={formData.targetToDo} 
+                  onChange={e => setFormData({ ...formData, targetToDo: e.target.value })}
+                  onKeyDown={(e) => handleAutoBulletKeyDown(e, 'targetToDo')}
+                  placeholder="List active goals..." 
+                  className="min-h-[120px] bg-secondary/20 rounded-2xl border-none text-white font-bold"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Progress Notes</Label>
-                <Textarea readOnly={isViewOnly} value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} className="min-h-[140px] bg-secondary/20 rounded-2xl border-none text-white" />
+                <Textarea 
+                  readOnly={isViewOnly} 
+                  value={formData.remarks} 
+                  onChange={e => setFormData({ ...formData, remarks: e.target.value })} 
+                  onKeyDown={(e) => handleAutoBulletKeyDown(e, 'remarks')}
+                  className="min-h-[140px] bg-secondary/20 rounded-2xl border-none text-white" 
+                />
               </div>
             </div>
           </div>
