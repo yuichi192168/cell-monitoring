@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Eye } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Lock, User, CheckCircle2, ClipboardList, StickyNote, ShieldCheck, Check, Eye, Users } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, doc, updateDoc, deleteDoc, where, addDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -47,12 +47,14 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { recordActivityLog } from '@/firebase/activity-logs';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MemberRegistry() {
   const { user: currentUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'All' | 'Leader' | 'Member'>('All');
   
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -86,10 +88,11 @@ export default function MemberRegistry() {
       .filter((m: any) => 
         (m.role === 'Member' || m.role === 'Leader') && 
         m.id !== currentUser?.id &&
-        m.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        m.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (roleFilter === 'All' || m.role === roleFilter)
       )
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [membersRaw, searchTerm, currentUser?.id]);
+  }, [membersRaw, searchTerm, currentUser?.id, roleFilter]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -316,7 +319,7 @@ export default function MemberRegistry() {
         </div>
 
         <Card className="glass-card overflow-hidden border-white/5 shadow-2xl rounded-[1.5rem] sm:rounded-[2rem]">
-          <CardHeader className="pb-4 px-4 sm:px-8">
+          <CardHeader className="pb-4 px-4 sm:px-8 space-y-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
@@ -328,7 +331,23 @@ export default function MemberRegistry() {
                 />
               </div>
             </div>
+
+            {/* Filter Tabs */}
+            <Tabs defaultValue="All" className="w-full" onValueChange={(v) => setRoleFilter(v as any)}>
+              <TabsList className="grid w-full grid-cols-3 bg-secondary/20 h-11 p-1 rounded-xl">
+                <TabsTrigger value="All" className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <Users className="size-3" /> All
+                </TabsTrigger>
+                <TabsTrigger value="Leader" className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <ShieldCheck className="size-3" /> Leaders
+                </TabsTrigger>
+                <TabsTrigger value="Member" className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <User className="size-3" /> Members
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardHeader>
+
           <CardContent className="px-0 sm:px-8">
             <div className="hidden sm:block">
               <ScrollArea className="w-full">
